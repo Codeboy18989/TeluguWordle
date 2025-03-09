@@ -7,6 +7,7 @@ A web-based implementation of the popular Wordle game adapted for the Telugu lan
 ### Core Game Features
 
 - **Word Guessing Game**: Players have 6 attempts to guess a Telugu word.
+- **Flexible Word Length**: Supports Telugu words of 3-5 syllabic units, respecting the natural structure of Telugu words.
 - **Color-coded Feedback**: 
   - Green: Letter is correct and in the correct position
   - Yellow: Letter is in the word but in the wrong position
@@ -24,8 +25,19 @@ This implementation pays special attention to the unique challenges of working w
 
 - **Character Handling**: Properly handles the 18 vowels and 38 consonants of Telugu
 - **Conjunct Support**: Supports consonant-consonant conjuncts using zero-width joiners (ZWJ) and non-joiners (ZWNJ)
-- **Syllabic Processing**: Correctly processes syllabic units (rather than individual Unicode code points) for game logic
+- **Syllabic Processing**: Correctly processes syllabic units rather than individual Unicode code points
+- **Special Character Handling**: Proper treatment of anusvara (ం) and visarga (ః) as part of syllabic units
 - **UTF-8 Encoding**: Uses proper UTF-8 encoding for Telugu characters
+
+### Telugu Linguistic Implementation
+
+The game handles Telugu words according to their natural syllabic structure:
+
+- **Consonant-vowel combinations** (e.g., కా, కి, కు) are treated as single units
+- **Independent vowels** (e.g., అ, ఆ, ఇ) form their own units
+- **Consonants with virama** (e.g., క్) are single units
+- **Consonant conjuncts** (e.g., క్ష) are treated as single units
+- **Special characters**: Syllables with anusvara (ం) or visarga (ః) are treated as single units
 
 ### Architecture
 
