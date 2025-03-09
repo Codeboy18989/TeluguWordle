@@ -77,11 +77,18 @@ const TeluguWordle = (function() {
             row.className = 'row';
             row.dataset.row = i;
             
-            // Create tiles in the row - using maximum possible word length
+            // Create tiles in the row based on the current word length
+            // We'll adjust this dynamically when a new word is selected
             for (let j = 0; j < CONFIG.MAX_WORD_LENGTH; j++) {
                 const tile = document.createElement('div');
                 tile.className = 'tile';
                 tile.dataset.col = j;
+                
+                // Initially hide tiles that exceed the minimum length
+                if (j >= CONFIG.MIN_WORD_LENGTH) {
+                    tile.classList.add('hidden-tile');
+                }
+                
                 row.appendChild(tile);
             }
             
@@ -117,6 +124,9 @@ const TeluguWordle = (function() {
         // Reset keyboard
         TeluguKeyboard.resetKeyStatuses();
         
+        // Adjust the visible tiles based on the target word length
+        adjustTileVisibility(state.targetWordParts.length);
+        
         console.log('New game started, target word:', state.targetWord); 
         
         // Save initial state
@@ -124,6 +134,32 @@ const TeluguWordle = (function() {
         
         // Update the current row to highlight active tiles
         updateCurrentRow();
+    }
+    
+    /**
+     * Adjust the number of visible tiles based on the target word length
+     * @param {number} wordLength - The length of the current target word
+     */
+    function adjustTileVisibility(wordLength) {
+        // Ensure wordLength is within our supported range
+        wordLength = Math.max(CONFIG.MIN_WORD_LENGTH, Math.min(wordLength, CONFIG.MAX_WORD_LENGTH));
+        
+        // Update all rows to show only the required number of tiles
+        for (let i = 0; i < CONFIG.MAX_ATTEMPTS; i++) {
+            const row = state.gameBoard.querySelector(`.row[data-row="${i}"]`);
+            const tiles = row.querySelectorAll('.tile');
+            
+            tiles.forEach((tile, index) => {
+                if (index < wordLength) {
+                    tile.classList.remove('hidden-tile');
+                } else {
+                    tile.classList.add('hidden-tile');
+                }
+            });
+        }
+        
+        // Also adjust the row styles for proper centering
+        document.documentElement.style.setProperty('--current-word-length', wordLength);
     }
     
     /**
@@ -139,6 +175,10 @@ const TeluguWordle = (function() {
         state.gameStatus = savedState.gameStatus;
         state.currentRow = savedState.currentRow;
         
+        // Adjust the visible tiles based on the saved word length or derived word length
+        const wordLength = savedState.wordLength || state.targetWordParts.length;
+        adjustTileVisibility(wordLength);
+        
         // Update UI
         clearBoard();
         
@@ -151,7 +191,7 @@ const TeluguWordle = (function() {
             const row = state.gameBoard.querySelector(`.row[data-row="${i}"]`);
             
             // Fill in the tiles
-            const tiles = row.querySelectorAll('.tile');
+            const tiles = row.querySelectorAll('.tile:not(.hidden-tile)');
             for (let j = 0; j < guessParts.length; j++) {
                 if (j < tiles.length) {
                     tiles[j].textContent = guessParts[j];
@@ -175,7 +215,7 @@ const TeluguWordle = (function() {
         if (state.currentGuess && state.gameStatus === 'playing') {
             const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
             const currentRow = state.gameBoard.querySelector(`.row[data-row="${state.currentRow}"]`);
-            const tiles = currentRow.querySelectorAll('.tile');
+            const tiles = currentRow.querySelectorAll('.tile:not(.hidden-tile)');
             
             for (let j = 0; j < currentGuessParts.length; j++) {
                 if (j < tiles.length) {
@@ -279,7 +319,7 @@ const TeluguWordle = (function() {
     function updateCurrentRow() {
         const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
         const currentRow = state.gameBoard.querySelector(`.row[data-row="${state.currentRow}"]`);
-        const tiles = currentRow.querySelectorAll('.tile');
+        const tiles = currentRow.querySelectorAll('.tile:not(.hidden-tile)');
         
         // Reset all tiles in the current row
         tiles.forEach(tile => {
@@ -294,16 +334,6 @@ const TeluguWordle = (function() {
                 tiles[i].classList.add('filled');
             }
         }
-        
-        // Highlight active tiles based on current target word length
-        const targetWordLength = state.targetWordParts.length;
-        tiles.forEach((tile, index) => {
-            if (index < targetWordLength) {
-                tile.classList.add('active-tile');
-            } else {
-                tile.classList.remove('active-tile');
-            }
-        });
     }
     
     /**
@@ -415,7 +445,7 @@ const TeluguWordle = (function() {
      */
     function revealRowAnimation(evaluation) {
         const currentRow = state.gameBoard.querySelector(`.row[data-row="${state.currentRow}"]`);
-        const tiles = currentRow.querySelectorAll('.tile');
+        const tiles = currentRow.querySelectorAll('.tile:not(.hidden-tile)');
         
         console.log('Revealing row animation for row:', state.currentRow);
         
@@ -505,7 +535,8 @@ const TeluguWordle = (function() {
             guesses: state.guesses,
             currentGuess: state.currentGuess,
             gameStatus: state.gameStatus,
-            currentRow: state.currentRow
+            currentRow: state.currentRow,
+            wordLength: state.targetWordParts.length // Save word length for proper UI restoration
         };
         
         GameStorage.saveGameState(gameState);
@@ -548,7 +579,7 @@ const TeluguWordle = (function() {
      */
     function animateWin() {
         const currentRow = state.gameBoard.querySelector(`.row[data-row="${state.currentRow}"]`);
-        const tiles = currentRow.querySelectorAll('.tile');
+        const tiles = currentRow.querySelectorAll('.tile:not(.hidden-tile)');
         
         // Add dance animation to each tile with delay
         for (let i = 0; i < tiles.length; i++) {

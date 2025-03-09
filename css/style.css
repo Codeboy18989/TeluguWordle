@@ -15,6 +15,9 @@
     --animation-speed-fast: 0.15s;
     --animation-speed-normal: 0.3s;
     --animation-speed-slow: 0.5s;
+    
+    /* Dynamic game settings */
+    --current-word-length: 3; /* Default to minimum word length */
 }
 
 * {
@@ -103,8 +106,9 @@ main {
 
 .row {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(var(--current-word-length), 1fr);
     gap: 5px;
+    justify-content: center;
 }
 
 .tile {
@@ -118,6 +122,13 @@ main {
     text-transform: uppercase;
     user-select: none;
     position: relative;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.tile.hidden-tile {
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
 }
 
 .tile.active-tile {
