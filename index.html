@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>తెలుగు Wordle - Telugu Word Game</title>
+    <meta name="description" content="A Wordle game implementation in Telugu language">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/keyboard.css">
+    <!-- Ensure proper Telugu font rendering -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>తెలుగు Wordle</h1>
+            <div class="header-right">
+                <button id="help-button" aria-label="Help">?</button>
+                <button id="stats-button" aria-label="Statistics">📊</button>
+                <button id="settings-button" aria-label="Settings">⚙️</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Game board - 6 rows with 5 tiles each for guesses -->
+            <div id="game-board">
+                <!-- Rows will be dynamically generated -->
+            </div>
+
+            <!-- Notification area for game messages -->
+            <div id="notification" class="hidden"></div>
+
+            <!-- Telugu Keyboard -->
+            <div id="keyboard-container">
+                <!-- Keyboard will be dynamically generated -->
+            </div>
+        </main>
+
+        <!-- Game completion modal -->
+        <div id="game-result-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2 id="result-title"></h2>
+                <p id="result-message"></p>
+                <p id="correct-word"></p>
+                <div id="result-stats"></div>
+                <button id="play-again-button">మరల ఆడండి (Play Again)</button>
+            </div>
+        </div>
+
+        <!-- Help modal -->
+        <div id="help-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>ఆట ఎలా ఆడాలి (How to Play)</h2>
+                <ul>
+                    <li>తెలుగులో ఒక పదాన్ని ఊహించండి. (Guess the Telugu word.)</li>
+                    <li>ప్రతి ఊహకు అక్షరాల రంగులు మారతాయి. (Colors show how close your guess was.)</li>
+                    <li><span class="example correct">హరితం</span> - సరైన అక్షరం సరైన స్థానంలో (Green: Correct letter, correct position)</li>
+                    <li><span class="example present">పసుపు</span> - సరైన అక్షరం తప్పు స్థానంలో (Yellow: Correct letter, wrong position)</li>
+                    <li><span class="example absent">బూడిద</span> - పదంలో లేని అక్షరం (Gray: Letter not in the word)</li>
+                    <li>6 ప్రయత్నాలలో పదాన్ని ఊహించండి. (Guess the word in 6 tries.)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Statistics modal -->
+        <div id="stats-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>గణాంకాలు (Statistics)</h2>
+                <div id="stats-container">
+                    <!-- Statistics will be dynamically generated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/telugu-utils.js"></script>
+    <script src="js/word-list.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/keyboard.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
