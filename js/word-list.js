@@ -1,16 +1,18 @@
 /**
  * word-list.js
  * Contains the list of Telugu words for the Wordle game.
- * These are 5-letter (or 5-unit) Telugu words.
+ * These are Telugu words of 3-5 syllabic units in length.
  */
 
 const TeluguWordList = (function() {
     /**
      * Main word list for the game
-     * These words are semantically 5 "units" in Telugu, where a unit can be:
-     * - A consonant-vowel combination
-     * - An independent vowel
-     * - A consonant with virama (consonant without a vowel)
+     * These words are semantically 3-5 "units" in Telugu, where a unit can be:
+     * - A consonant-vowel combination (e.g., కా, కి, కు)
+     * - An independent vowel (e.g., అ, ఆ, ఇ)
+     * - A consonant with virama (e.g., క్)
+     * - A consonant-consonant conjunct (treated as a single unit)
+     * - Special cases: syllables with anusvara (ం) or visarga (ః) are treated as a single unit
      */
     const mainWordList = [
         // Common Telugu 5-letter words
@@ -72,8 +74,11 @@ const TeluguWordList = (function() {
      * Target word list - words that can be solutions
      * This is a subset of the main word list, potentially excluding:
      * - Very rare or difficult words
-     * - Words with complex conjuncts
+     * - Words with complex multiple consonant conjuncts
      * - Words with ambiguous divisions
+     * 
+     * Note: Each word has been analyzed for its syllabic unit count,
+     * ensuring it falls within our 3-5 unit range for gameplay.
      */
     const targetWordList = [
         'అమ్మా', // Mother

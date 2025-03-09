@@ -177,8 +177,33 @@ const TeluguUtils = (function() {
         console.log('Splitting word:', word, 'length:', word.length);
         
         while (i < word.length) {
+            // Check for consonant-vowel combinations with anusvara or visarga
+            if (i < word.length - 2 && 
+                isConsonant(word[i]) && 
+                isVowelDiacritic(word[i+1]) && 
+                (word[i+2] === 'ం' || word[i+2] === 'ః')) {
+                parts.push(word.substring(i, i+3));
+                console.log('  Found consonant-vowel with anusvara/visarga:', word.substring(i, i+3));
+                i += 3;
+            }
+            // Check for consonant with anusvara or visarga (without vowel modifier)
+            else if (i < word.length - 1 && 
+                     isConsonant(word[i]) && 
+                     (word[i+1] === 'ం' || word[i+1] === 'ః')) {
+                parts.push(word.substring(i, i+2));
+                console.log('  Found consonant with anusvara/visarga:', word.substring(i, i+2));
+                i += 2;
+            }
+            // Check for vowel with anusvara or visarga
+            else if (i < word.length - 1 && 
+                     isVowel(word[i]) && 
+                     (word[i+1] === 'ం' || word[i+1] === 'ః')) {
+                parts.push(word.substring(i, i+2));
+                console.log('  Found vowel with anusvara/visarga:', word.substring(i, i+2));
+                i += 2;
+            }
             // Check for consonant-vowel combinations
-            if (i < word.length - 1 && isConsonant(word[i]) && isVowelDiacritic(word[i+1])) {
+            else if (i < word.length - 1 && isConsonant(word[i]) && isVowelDiacritic(word[i+1])) {
                 parts.push(word.substring(i, i+2));
                 console.log('  Found consonant-vowel:', word.substring(i, i+2));
                 i += 2;
@@ -191,20 +216,44 @@ const TeluguUtils = (function() {
                     console.log('  Found conjunct with ZWJ/ZWNJ:', word.substring(i, i+4));
                     i += 4;
                 } else {
-                    parts.push(word.substring(i, i+3));
-                    console.log('  Found conjunct:', word.substring(i, i+3));
-                    i += 3;
+                    // Treat entire conjunct as a single unit
+                    let conjunctEnd = i + 3;
+                    
+                    // Look ahead for additional consonants in the conjunct
+                    while (conjunctEnd < word.length - 1 && 
+                          isVirama(word[conjunctEnd-1]) && 
+                          isConsonant(word[conjunctEnd])) {
+                        conjunctEnd++;
+                    }
+                    
+                    // Check if there's a vowel diacritic after the conjunct
+                    if (conjunctEnd < word.length && isVowelDiacritic(word[conjunctEnd])) {
+                        conjunctEnd++;
+                    }
+                    
+                    // Check if there's an anusvara or visarga after the conjunct+vowel
+                    if (conjunctEnd < word.length && 
+                        (word[conjunctEnd] === 'ం' || word[conjunctEnd] === 'ః')) {
+                        conjunctEnd++;
+                    }
+                    
+                    parts.push(word.substring(i, conjunctEnd));
+                    console.log('  Found complex conjunct:', word.substring(i, conjunctEnd));
+                    i = conjunctEnd;
                 }
             }
             // Single characters (vowels, consonants, or others)
             else {
                 parts.push(word[i]);
-                console.log('  Found single char:', word[i], isVowel(word[i]) ? '(vowel)' : isConsonant(word[i]) ? '(consonant)' : '(other)');
+                console.log('  Found single char:', word[i], 
+                          isVowel(word[i]) ? '(vowel)' : 
+                          isConsonant(word[i]) ? '(consonant)' : 
+                          '(other)');
                 i++;
             }
         }
         
-        console.log('Split result:', parts);
+        console.log('Split result:', parts, 'count:', parts.length);
         return parts;
     }
 

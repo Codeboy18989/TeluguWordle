@@ -8,8 +8,9 @@ const TeluguWordle = (function() {
     const CONFIG = {
         // Number of attempts allowed
         MAX_ATTEMPTS: 6,
-        // Word length (in Telugu units, not characters)
-        WORD_LENGTH: 5,
+        // Min and max word length (in Telugu units, not characters)
+        MIN_WORD_LENGTH: 3,
+        MAX_WORD_LENGTH: 5,
         // Animation timing
         FLIP_ANIMATION_DURATION: 500, // ms
         DANCE_ANIMATION_DURATION: 300, // ms,
@@ -76,8 +77,8 @@ const TeluguWordle = (function() {
             row.className = 'row';
             row.dataset.row = i;
             
-            // Create tiles in the row
-            for (let j = 0; j < CONFIG.WORD_LENGTH; j++) {
+            // Create tiles in the row - using maximum possible word length
+            for (let j = 0; j < CONFIG.MAX_WORD_LENGTH; j++) {
                 const tile = document.createElement('div');
                 tile.className = 'tile';
                 tile.dataset.col = j;
@@ -96,6 +97,14 @@ const TeluguWordle = (function() {
         state.targetWord = TeluguWordList.getRandomWord();
         state.targetWordParts = TeluguUtils.splitTeluguWord(state.targetWord);
         
+        // Validate that the word has an acceptable number of units
+        console.log('New game word:', state.targetWord, 'Units:', state.targetWordParts.length);
+        if (state.targetWordParts.length < CONFIG.MIN_WORD_LENGTH || 
+            state.targetWordParts.length > CONFIG.MAX_WORD_LENGTH) {
+            console.warn('Word has invalid length, selecting another word');
+            return startNewGame(); // Try another word
+        }
+        
         // Reset game state
         state.guesses = [];
         state.currentGuess = '';
@@ -108,10 +117,13 @@ const TeluguWordle = (function() {
         // Reset keyboard
         TeluguKeyboard.resetKeyStatuses();
         
-        console.log('New game started, target word:', state.targetWord); // For debugging
+        console.log('New game started, target word:', state.targetWord); 
         
         // Save initial state
         saveGameState();
+        
+        // Update the current row to highlight active tiles
+        updateCurrentRow();
     }
     
     /**
@@ -282,6 +294,16 @@ const TeluguWordle = (function() {
                 tiles[i].classList.add('filled');
             }
         }
+        
+        // Highlight active tiles based on current target word length
+        const targetWordLength = state.targetWordParts.length;
+        tiles.forEach((tile, index) => {
+            if (index < targetWordLength) {
+                tile.classList.add('active-tile');
+            } else {
+                tile.classList.remove('active-tile');
+            }
+        });
     }
     
     /**
@@ -289,22 +311,20 @@ const TeluguWordle = (function() {
      */
     function submitGuess() {
         const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
+        const targetWordLength = state.targetWordParts.length;
         
         // Debug log to help identify issues
-        console.log('Current guess:', state.currentGuess, 'Parts:', currentGuessParts);
+        console.log('Current guess:', state.currentGuess, 'Parts:', currentGuessParts, 'Target length:', targetWordLength);
         
-        // Check if we have a complete word
-        if (currentGuessParts.length < CONFIG.WORD_LENGTH) {
-            showNotification('పదం పూర్తి చేయండి (Word not complete)');
+        // Check if we have a complete word matching the target length
+        if (currentGuessParts.length !== targetWordLength) {
+            showNotification(`${targetWordLength} అక్షరాల పదం ఉండాలి (Word must be ${targetWordLength} units)`);
             shakeCurrentRow();
             return;
         }
         
         // Check if it's a valid Telugu word
-        // For testing purposes, we can temporarily skip this validation
-        // or add the current word to the dictionary
         if (!TeluguWordList.isValidWord(state.currentGuess)) {
-            // For debugging, add this word to the dictionary temporarily
             console.log('Word validation failed:', state.currentGuess);
             showNotification('చెల్లుబాటు అయ్యే తెలుగు పదం కాదు (Not a valid Telugu word)');
             shakeCurrentRow();
