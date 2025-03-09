@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners for physical keyboard input
     document.addEventListener('keydown', handlePhysicalKeyboard);
     
+    // Setup keyboard toggle button for mobile view
+    setupKeyboardToggle();
+    
     // Handle physical keyboard input
     function handlePhysicalKeyboard(event) {
         // Ignore if focused on an input element
@@ -37,6 +40,42 @@ document.addEventListener('DOMContentLoaded', function() {
             // In a future version, we could implement transliteration or mapping
             // event.preventDefault();
         }
+    }
+    
+    // Set up keyboard toggle functionality for mobile
+    function setupKeyboardToggle() {
+        const keyboardContainer = document.getElementById('keyboard-container');
+        const toggleButton = document.getElementById('toggle-keyboard');
+        
+        // Initialize keyboard state - visible by default
+        let keyboardVisible = true;
+        
+        // Toggle keyboard visibility when button is clicked
+        toggleButton.addEventListener('click', function() {
+            keyboardVisible = !keyboardVisible;
+            
+            if (keyboardVisible) {
+                keyboardContainer.style.display = 'block';
+                document.getElementById('game-board').style.paddingBottom = '140px';
+            } else {
+                keyboardContainer.style.display = 'none';
+                document.getElementById('game-board').style.paddingBottom = '10px';
+            }
+        });
+        
+        // Auto-hide keyboard on small screens in portrait orientation
+        function checkOrientation() {
+            // Only apply auto-hide on very small screens in portrait mode
+            if (window.innerHeight < 600 && window.innerWidth < window.innerHeight) {
+                if (keyboardVisible) {
+                    toggleButton.click(); // Auto-hide on first load for small screens
+                }
+            }
+        }
+        
+        // Check on page load and resize
+        checkOrientation();
+        window.addEventListener('resize', checkOrientation);
     }
     
     // Handle dark mode toggle if implemented in settings

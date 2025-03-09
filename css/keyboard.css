@@ -1,15 +1,25 @@
 /* Telugu Keyboard Styles */
 #keyboard-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     width: 100%;
-    max-width: 500px;
-    margin-top: auto;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: var(--color-keyboard-bg);
+    border-top: 1px solid var(--color-tile-border);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    padding: 5px 10px 10px;
+    border-radius: 15px 15px 0 0;
 }
 
 .keyboard {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
     width: 100%;
 }
 
@@ -17,26 +27,26 @@
     display: flex;
     justify-content: center;
     width: 100%;
-    gap: 6px;
+    gap: 4px;
 }
 
 .key {
-    height: 44px;
+    height: 40px;
     flex-grow: 1;
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: var(--color-key-bg);
     color: var(--color-key-text);
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: bold;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     user-select: none;
     transition: background-color 0.1s ease;
-    padding: 0 5px;
-    min-width: 30px;
+    padding: 0 3px;
+    min-width: 25px;
 }
 
 .key:hover {
@@ -49,12 +59,12 @@
 
 .key.wide {
     flex-grow: 1.5;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
 }
 
 .key.extra-wide {
     flex-grow: 2;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
 }
 
 /* Key status styles matching the tiles */
@@ -78,12 +88,12 @@
     display: flex;
     width: 100%;
     border-bottom: 1px solid var(--color-tile-border);
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 
 .keyboard-tab {
-    padding: 5px 10px;
-    font-size: 14px;
+    padding: 5px 8px;
+    font-size: 13px;
     background: none;
     border: none;
     cursor: pointer;
@@ -113,8 +123,8 @@
     background-color: white;
     border: 1px solid var(--color-tile-border);
     border-radius: 4px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    z-index: 10;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 110;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 4px;

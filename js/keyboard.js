@@ -307,12 +307,27 @@ const TeluguKeyboard = (function() {
      */
     function positionCombinationPanel(targetElement) {
         const rect = targetElement.getBoundingClientRect();
-        const keyboardRect = keyboardContainer.getBoundingClientRect();
         
-        // Position panel above the key
+        // Position panel above the key, considering that keyboard is now fixed
         combinationPanel.style.position = 'absolute';
-        combinationPanel.style.left = (rect.left - keyboardRect.left) + 'px';
-        combinationPanel.style.bottom = (keyboardRect.bottom - rect.top + 10) + 'px';
+        combinationPanel.style.left = rect.left + 'px';
+        combinationPanel.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+        
+        // Adjust panel position to ensure it stays within viewport
+        setTimeout(() => {
+            const panelRect = combinationPanel.getBoundingClientRect();
+            
+            // Ensure panel doesn't go beyond right edge
+            if (panelRect.right > window.innerWidth) {
+                const overflow = panelRect.right - window.innerWidth;
+                combinationPanel.style.left = (rect.left - overflow - 10) + 'px';
+            }
+            
+            // Ensure panel doesn't go beyond left edge
+            if (panelRect.left < 0) {
+                combinationPanel.style.left = '10px';
+            }
+        }, 0);
     }
     
     /**
