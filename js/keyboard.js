@@ -189,18 +189,28 @@ const TeluguKeyboard = (function() {
         keyboardElement.addEventListener('click', (event) => {
             const target = event.target;
             
+            console.log('Keyboard click:', target.dataset);
+            
             // Handle character keys
             if (target.dataset.char) {
+                console.log('Character key pressed:', target.dataset.char);
                 keyHandler(target.dataset.char);
             }
             // Handle function keys
             else if (target.dataset.action) {
+                console.log('Action key pressed:', target.dataset.action);
                 keyHandler(target.dataset.action);
             }
             // Handle consonant keys for combination panel
-            else if (target.classList.contains('key') && target.parentElement.parentElement.dataset.section === 'consonants') {
+            else if (target.classList.contains('key') && 
+                     target.parentElement && 
+                     target.parentElement.parentElement && 
+                     target.parentElement.parentElement.dataset.section === 'consonants') {
                 const consonant = target.textContent;
+                console.log('Consonant key pressed for combinations:', consonant);
                 showCombinationPanel(consonant, target);
+            } else {
+                console.log('Unhandled keyboard click:', target);
             }
         });
         

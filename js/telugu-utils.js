@@ -169,10 +169,18 @@ const TeluguUtils = (function() {
         const parts = [];
         let i = 0;
         
+        // If word is empty or null, return empty array
+        if (!word || word.length === 0) {
+            return parts;
+        }
+        
+        console.log('Splitting word:', word, 'length:', word.length);
+        
         while (i < word.length) {
             // Check for consonant-vowel combinations
             if (i < word.length - 1 && isConsonant(word[i]) && isVowelDiacritic(word[i+1])) {
                 parts.push(word.substring(i, i+2));
+                console.log('  Found consonant-vowel:', word.substring(i, i+2));
                 i += 2;
             }
             // Check for consonant-virama-consonant (conjuncts)
@@ -180,19 +188,23 @@ const TeluguUtils = (function() {
                 // Handle special cases for conjuncts with ZWJ or ZWNJ
                 if (i < word.length - 3 && (word[i+2] === '\u200C' || word[i+2] === '\u200D')) {
                     parts.push(word.substring(i, i+4));
+                    console.log('  Found conjunct with ZWJ/ZWNJ:', word.substring(i, i+4));
                     i += 4;
                 } else {
                     parts.push(word.substring(i, i+3));
+                    console.log('  Found conjunct:', word.substring(i, i+3));
                     i += 3;
                 }
             }
             // Single characters (vowels, consonants, or others)
             else {
                 parts.push(word[i]);
+                console.log('  Found single char:', word[i], isVowel(word[i]) ? '(vowel)' : isConsonant(word[i]) ? '(consonant)' : '(other)');
                 i++;
             }
         }
         
+        console.log('Split result:', parts);
         return parts;
     }
 

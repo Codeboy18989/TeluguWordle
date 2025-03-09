@@ -122,7 +122,19 @@ const TeluguWordList = (function() {
 
     // Helper function to check if a word is valid (exists in the main word list)
     function isValidWord(word) {
-        return mainWordList.includes(word);
+        // Normalize the word before checking (handle any character normalization)
+        const normalizedWord = TeluguUtils.normalizeTeluguText(word);
+        
+        // Check if the normalized word exists in the main word list
+        for (let i = 0; i < mainWordList.length; i++) {
+            if (TeluguUtils.normalizeTeluguText(mainWordList[i]) === normalizedWord) {
+                return true;
+            }
+        }
+        
+        // For debugging
+        console.log('Invalid word:', word, 'not found in dictionary');
+        return false;
     }
 
     // Get number of total target words

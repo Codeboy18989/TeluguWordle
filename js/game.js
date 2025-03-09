@@ -290,6 +290,9 @@ const TeluguWordle = (function() {
     function submitGuess() {
         const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
         
+        // Debug log to help identify issues
+        console.log('Current guess:', state.currentGuess, 'Parts:', currentGuessParts);
+        
         // Check if we have a complete word
         if (currentGuessParts.length < CONFIG.WORD_LENGTH) {
             showNotification('పదం పూర్తి చేయండి (Word not complete)');
@@ -298,7 +301,11 @@ const TeluguWordle = (function() {
         }
         
         // Check if it's a valid Telugu word
+        // For testing purposes, we can temporarily skip this validation
+        // or add the current word to the dictionary
         if (!TeluguWordList.isValidWord(state.currentGuess)) {
+            // For debugging, add this word to the dictionary temporarily
+            console.log('Word validation failed:', state.currentGuess);
             showNotification('చెల్లుబాటు అయ్యే తెలుగు పదం కాదు (Not a valid Telugu word)');
             shakeCurrentRow();
             return;
@@ -313,6 +320,9 @@ const TeluguWordle = (function() {
         // Start the reveal animation
         state.revealingRow = true;
         revealRowAnimation(evaluation);
+        
+        // Log success
+        console.log('Guess submitted successfully:', state.currentGuess);
     }
     
     /**
@@ -324,39 +334,58 @@ const TeluguWordle = (function() {
         const guessParts = TeluguUtils.splitTeluguWord(guess);
         const results = [];
         
-        // First pass: Mark correct letters
+        // Make copies to avoid modifying originals
         const targetCopy = [...state.targetWordParts];
         const guessCopy = [...guessParts];
         
         // Create a map to track which target parts have been matched
         const matched = new Array(targetCopy.length).fill(false);
         
-        // Check for exact matches (correct letter in correct position)
+        // First pass: Identify correct positions (green)
         for (let i = 0; i < guessCopy.length; i++) {
-            if (i < targetCopy.length && TeluguUtils.compareTeluguChars(guessCopy[i], targetCopy[i])) {
-                results[i] = { letter: guessCopy[i], status: 'correct' };
-                matched[i] = true;
+            if (i < targetCopy.length) {
+                if (TeluguUtils.normalizeTeluguText(guessCopy[i]) === TeluguUtils.normalizeTeluguText(targetCopy[i])) {
+                    results[i] = { letter: guessCopy[i], status: 'correct' };
+                    matched[i] = true;
+                } else {
+                    // Placeholder for now
+                    results[i] = { letter: guessCopy[i], status: 'absent' };
+                }
             } else {
+                // Handle case where guess is longer than target
                 results[i] = { letter: guessCopy[i], status: 'absent' };
             }
         }
         
-        // Second pass: Mark present letters
+        // Second pass: Identify present but misplaced letters (yellow)
         for (let i = 0; i < guessCopy.length; i++) {
             if (results[i].status === 'correct') {
-                continue;
+                continue; // Skip already matched positions
             }
             
-            // Check if this letter exists elsewhere in the target
+            let foundMatch = false;
+            
+            // Check if this character exists elsewhere in the target
             for (let j = 0; j < targetCopy.length; j++) {
-                if (!matched[j] && TeluguUtils.compareTeluguChars(guessCopy[i], targetCopy[j])) {
+                // Skip positions that are already perfectly matched
+                if (matched[j]) continue;
+                
+                // Compare normalized characters
+                if (TeluguUtils.normalizeTeluguText(guessCopy[i]) === TeluguUtils.normalizeTeluguText(targetCopy[j])) {
                     results[i].status = 'present';
-                    matched[j] = true;
+                    matched[j] = true; // Mark this target position as matched
+                    foundMatch = true;
                     break;
                 }
             }
+            
+            // If no match found, it remains 'absent'
+            if (!foundMatch) {
+                results[i].status = 'absent';
+            }
         }
         
+        console.log('Evaluation:', guess, results.map(r => r.status).join(', ')); // Debug output
         return results;
     }
     
@@ -368,6 +397,8 @@ const TeluguWordle = (function() {
         const currentRow = state.gameBoard.querySelector(`.row[data-row="${state.currentRow}"]`);
         const tiles = currentRow.querySelectorAll('.tile');
         
+        console.log('Revealing row animation for row:', state.currentRow);
+        
         // Reveal tiles one by one with delay
         for (let i = 0; i < tiles.length; i++) {
             if (i < evaluation.length) {
@@ -378,13 +409,14 @@ const TeluguWordle = (function() {
                     
                     // After half the animation (when tile is flipped halfway), apply the status class
                     setTimeout(() => {
+                        // Apply status class (correct, present, absent)
                         tiles[i].classList.add(evaluation[i].status);
                         
                         // Update keyboard status
                         TeluguKeyboard.updateKeyStatus(evaluation[i].letter, evaluation[i].status);
                         
-                        // If last tile, finalize the guess
-                        if (i === tiles.length - 1) {
+                        // If last tile, finalize the guess after animation completes
+                        if (i === Math.min(tiles.length, evaluation.length) - 1) {
                             setTimeout(() => {
                                 finalizeGuess(evaluation);
                             }, CONFIG.FLIP_ANIMATION_DURATION / 2);
@@ -400,7 +432,9 @@ const TeluguWordle = (function() {
      * @param {Array} evaluation - The evaluation results
      */
     function finalizeGuess(evaluation) {
-        // Check for win
+        console.log('Finalizing guess, current row:', state.currentRow);
+        
+        // Check for win - all letters must be 'correct'
         const isWin = evaluation.every(result => result.status === 'correct');
         
         if (isWin) {
@@ -408,13 +442,16 @@ const TeluguWordle = (function() {
             GameStorage.updateStatistics(true, state.currentRow + 1);
             showNotification('అభినందనలు! (Congratulations!)');
             animateWin();
+            console.log('Game won at row:', state.currentRow + 1);
         } else {
             // Move to next row or end game
             state.currentRow++;
+            console.log('Moving to next row:', state.currentRow);
             
             if (state.currentRow >= CONFIG.MAX_ATTEMPTS) {
                 state.gameStatus = 'lost';
                 GameStorage.updateStatistics(false);
+                console.log('Game lost, max attempts reached');
             }
         }
         
@@ -432,6 +469,9 @@ const TeluguWordle = (function() {
             setTimeout(() => {
                 showGameResult();
             }, 1500);
+        } else {
+            // Ensure the next row is ready for input
+            updateCurrentRow();
         }
     }
     
@@ -492,10 +532,21 @@ const TeluguWordle = (function() {
         
         // Add dance animation to each tile with delay
         for (let i = 0; i < tiles.length; i++) {
+            // Set animation order as a CSS variable for proper sequencing
+            tiles[i].style.setProperty('--animation-order', i);
+            
+            // Add dance class with slight delay to ensure proper sequencing
             setTimeout(() => {
                 tiles[i].classList.add('dance');
             }, i * 100);
         }
+        
+        // Remove animation classes after they complete
+        setTimeout(() => {
+            tiles.forEach(tile => {
+                tile.classList.remove('dance');
+            });
+        }, 1500);
     }
     
     /**
