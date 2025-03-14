@@ -118,13 +118,37 @@ const TeluguWordList = (function() {
         'చెవి', // Ear
         'కన్ను', // Eye
     ];
-
-    // Helper function to get a random word from the target word list
+    // Add this constant for the localStorage key
+    const DAILY_WORDS_KEY = 'telugu_wordle_daily_words';
+    
+    // Replace or update your existing getRandomWord function with this:
     function getRandomWord() {
+        // Check if there's a daily word set for today
+        const dailyWord = getTodaysWord();
+        if (dailyWord) {
+            console.log("Using daily word:", dailyWord);
+            return dailyWord;
+        }
+        
+        // If no daily word, select a random one
         const randomIndex = Math.floor(Math.random() * targetWordList.length);
         return targetWordList[randomIndex];
     }
-
+    // Add this new function to get today's word
+    function getTodaysWord() {
+        try {
+            const dailyWordsJson = localStorage.getItem(DAILY_WORDS_KEY);
+            if (!dailyWordsJson) return null;
+            
+            const dailyWords = JSON.parse(dailyWordsJson);
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+            
+            return dailyWords[today] || null;
+        } catch (e) {
+            console.error("Error getting today's word:", e);
+            return null;
+        }
+    }
     // Helper function to check if a word is valid (exists in the main word list)
     function isValidWord(word) {
         // Normalize the word before checking (handle any character normalization)
@@ -153,6 +177,7 @@ const TeluguWordList = (function() {
         targetWordList,
         getRandomWord,
         isValidWord,
-        getWordCount
+        getWordCount,
+        getTodaysWord
     };
 })();

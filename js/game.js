@@ -100,17 +100,17 @@ const TeluguWordle = (function() {
      * Start a new game with a random target word
      */
     function startNewGame() {
+        // Clear the board
+        clearBoard();
+        
         // Select a random target word
         state.targetWord = TeluguWordList.getRandomWord();
         state.targetWordParts = TeluguUtils.splitTeluguWord(state.targetWord);
         
-        // Validate that the word has an acceptable number of units
-        console.log('New game word:', state.targetWord, 'Units:', state.targetWordParts.length);
-        if (state.targetWordParts.length < CONFIG.MIN_WORD_LENGTH || 
-            state.targetWordParts.length > CONFIG.MAX_WORD_LENGTH) {
-            console.warn('Word has invalid length, selecting another word');
-            return startNewGame(); // Try another word
-        }
+        // Log for debugging - you can remove these later
+        console.log('New game word:', state.targetWord);
+        console.log('Word parts:', state.targetWordParts);
+        console.log('Word length:', state.targetWordParts.length);
         
         // Reset game state
         state.guesses = [];
@@ -118,16 +118,11 @@ const TeluguWordle = (function() {
         state.gameStatus = 'playing';
         state.currentRow = 0;
         
-        // Clear board UI
-        clearBoard();
-        
         // Reset keyboard
         TeluguKeyboard.resetKeyStatuses();
         
-        // Adjust the visible tiles based on the target word length
+        // THIS IS THE KEY PART - Update UI based on the word length
         adjustTileVisibility(state.targetWordParts.length);
-        
-        console.log('New game started, target word:', state.targetWord); 
         
         // Save initial state
         saveGameState();
@@ -141,6 +136,8 @@ const TeluguWordle = (function() {
      * @param {number} wordLength - The length of the current target word
      */
     function adjustTileVisibility(wordLength) {
+        console.log('Adjusting tile visibility for word length:', wordLength);
+        
         // Ensure wordLength is within our supported range
         wordLength = Math.max(CONFIG.MIN_WORD_LENGTH, Math.min(wordLength, CONFIG.MAX_WORD_LENGTH));
         
@@ -175,9 +172,11 @@ const TeluguWordle = (function() {
         state.gameStatus = savedState.gameStatus;
         state.currentRow = savedState.currentRow;
         
-        // Adjust the visible tiles based on the saved word length or derived word length
-        const wordLength = savedState.wordLength || state.targetWordParts.length;
-        adjustTileVisibility(wordLength);
+        console.log('Restoring game state with word:', state.targetWord);
+        console.log('Word parts:', state.targetWordParts);
+        
+        // THIS IS THE KEY PART - Adjust tiles for the restored word
+        adjustTileVisibility(state.targetWordParts.length);
         
         // Update UI
         clearBoard();
@@ -341,10 +340,11 @@ const TeluguWordle = (function() {
      */
     function submitGuess() {
         const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
-        const targetWordLength = state.targetWordParts.length;
+        const targetWordLength = state.targetWordParts.length; // DYNAMIC length
         
-        // Debug log to help identify issues
-        console.log('Current guess:', state.currentGuess, 'Parts:', currentGuessParts, 'Target length:', targetWordLength);
+        console.log('Submitting guess:', state.currentGuess);
+        console.log('Guess parts:', currentGuessParts);
+        console.log('Target length:', targetWordLength);
         
         // Check if we have a complete word matching the target length
         if (currentGuessParts.length !== targetWordLength) {

@@ -134,7 +134,7 @@ main {
 }
 
 .tile.hidden-tile {
-    display: none; /* Hide completely instead of opacity */
+    display: none !important; /* Hide completely instead of opacity */
 }
 
 .tile.active-tile {
