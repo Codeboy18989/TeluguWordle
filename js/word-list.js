@@ -19,7 +19,7 @@ const TeluguWordList = (function() {
         'అమ్మా', // Mother
         'నాన్న', // Father
         'ఇల్లు', // House
-        'పిల్ల', // Child
+        'పిల్ల',// Child
         'కోడి', // Chicken
         'పాము', // Snake
         'పులి', // Tiger
