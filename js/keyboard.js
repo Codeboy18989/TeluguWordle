@@ -40,7 +40,7 @@ const TeluguKeyboard = (function() {
     let keyboardContainer = null;
     let keyboardElement = null;
     let combinationPanel = null;
-    let keyHandler = null;
+    let handleKeyPress = null;
     let compositionDisplay = null;
     let currentComposition = '';
     
@@ -51,7 +51,7 @@ const TeluguKeyboard = (function() {
      */
     function init(container, onKeyPress) {
         keyboardContainer = container;
-        keyHandler = onKeyPress;
+        handleKeyPress = onKeyPress;
         
         // Create the main keyboard structure
         createKeyboardStructure();
@@ -199,12 +199,12 @@ const TeluguKeyboard = (function() {
             // Handle character keys
             if (target.dataset.char) {
                 console.log('Character key pressed:', target.dataset.char);
-                keyHandler(target.dataset.char);
+                handleKeyPress(target.dataset.char);
             }
             // Handle function keys
             else if (target.dataset.action) {
                 console.log('Action key pressed:', target.dataset.action);
-                keyHandler(target.dataset.action);
+                handleKeyPress(target.dataset.action);
             }
             // Handle consonant keys for combination panel
             else if (target.classList.contains('key') && 
@@ -299,7 +299,8 @@ const TeluguKeyboard = (function() {
         key.dataset.char = combo;
         
         key.addEventListener('click', () => {
-            keyHandler(combo);
+            console.log('Combo key clicked:', combo);
+            handleKeyPress(combo);
             combinationPanel.style.display = 'none';
         });
         
@@ -400,7 +401,7 @@ const TeluguKeyboard = (function() {
                 console.log('Submitting composition:', currentComposition);
                 if (currentComposition) {
                     // Submit the composed text to the game
-                    keyHandler('submit-composition', currentComposition);
+                    handleKeyPress('submit-composition', currentComposition);
                     
                     // Clear the composition area
                     compositionDisplay.textContent = '';
@@ -412,27 +413,31 @@ const TeluguKeyboard = (function() {
     
     // Modify the key press handling
     function handleKeyPress(key) {
+        console.log('Handling key press:', key);
         if (key === 'enter') {
             // Submit the current composition if any
             if (currentComposition) {
-                keyHandler('submit-composition', currentComposition);
+                console.log('Submitting composition:', currentComposition);
+                handleKeyPress('submit-composition', currentComposition);
                 compositionDisplay.textContent = '';
                 currentComposition = '';
             } else {
                 // Regular enter behavior
-                keyHandler('enter');
+                handleKeyPress('enter');
             }
         } else if (key === 'backspace') {
             // If we have composition text, delete from that
             if (currentComposition) {
+                console.log('Backspace in composition');
                 currentComposition = currentComposition.slice(0, -1);
                 compositionDisplay.textContent = currentComposition;
             } else {
                 // Regular backspace behavior
-                keyHandler('backspace');
+                handleKeyPress('backspace');
             }
         } else {
             // Add to composition
+            console.log('Adding to composition:', key);
             currentComposition += key;
             compositionDisplay.textContent = currentComposition;
         }

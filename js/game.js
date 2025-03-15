@@ -315,6 +315,8 @@ const TeluguWordle = (function() {
      * @param {string} [composedText] - Optional composed text for Telugu input
      */
     function handleKeyInput(input) {
+        console.log('Game received input:', input, composedText);
+
         // Ignore input if game is not in playing state or if animation is in progress
         if (state.gameStatus !== 'playing' || state.revealingRow) {
             return;
@@ -326,6 +328,7 @@ const TeluguWordle = (function() {
         } else if (input === 'backspace') {
             deleteLetter();
         } else if (input === 'submit-composition' && composedText) {
+            console.log('Handling composed text:', composedText);
             // Handle composed Telugu text
             addComposedText(composedText);
         } else {
