@@ -41,6 +41,8 @@ const TeluguKeyboard = (function() {
     let keyboardElement = null;
     let combinationPanel = null;
     let keyHandler = null;
+    let compositionDisplay = null;
+    let currentComposition = '';
     
     /**
      * Initialize the keyboard
@@ -371,25 +373,41 @@ const TeluguKeyboard = (function() {
 
     // Add this new function
     function setupCompositionArea() {
+        console.log('Setting up composition area');
         compositionDisplay = document.querySelector('.composition-display');
         
+        if (!compositionDisplay) {
+            console.error('Composition display element not found!');
+            return;
+        }
+
+        console.log('Composition display found:', compositionDisplay);
+
         // Clear button
-        document.querySelector('.composition-clear').addEventListener('click', () => {
-            compositionDisplay.textContent = '';
-            currentComposition = '';
-        });
-        
-        // Submit button
-        document.querySelector('.composition-submit').addEventListener('click', () => {
-            if (currentComposition) {
-                // Submit the composed text to the game
-                keyHandler('submit-composition', currentComposition);
-                
-                // Clear the composition area
+        const clearButton = document.querySelector('.composition-clear');
+        if (clearButton) {
+            clearButton.addEventListener('click', () => {
+                console.log('Clearing composition');
                 compositionDisplay.textContent = '';
                 currentComposition = '';
-            }
-        });
+            });
+        }
+        
+        // Submit button
+        const submitButton = document.querySelector('.composition-submit');
+        if (submitButton) {
+            submitButton.addEventListener('click', () => {
+                console.log('Submitting composition:', currentComposition);
+                if (currentComposition) {
+                    // Submit the composed text to the game
+                    keyHandler('submit-composition', currentComposition);
+                    
+                    // Clear the composition area
+                    compositionDisplay.textContent = '';
+                    currentComposition = '';
+                }
+            });
+        }
     }
     
     // Modify the key press handling
