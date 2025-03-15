@@ -40,7 +40,7 @@ const TeluguKeyboard = (function() {
     let keyboardContainer = null;
     let keyboardElement = null;
     let combinationPanel = null;
-    let handleKeyPress = null;
+    let keyHandler = null;
     let compositionDisplay = null;
     let currentComposition = '';
     
@@ -51,7 +51,7 @@ const TeluguKeyboard = (function() {
      */
     function init(container, onKeyPress) {
         keyboardContainer = container;
-        handleKeyPress = onKeyPress;
+        keyHandler = onKeyPress;
         
         // Create the main keyboard structure
         createKeyboardStructure();
@@ -401,7 +401,7 @@ const TeluguKeyboard = (function() {
                 console.log('Submitting composition:', currentComposition);
                 if (currentComposition) {
                     // Submit the composed text to the game
-                    handleKeyPress('submit-composition', currentComposition);
+                    keyHandler('submit-composition', currentComposition);
                     
                     // Clear the composition area
                     compositionDisplay.textContent = '';
@@ -418,12 +418,12 @@ const TeluguKeyboard = (function() {
             // Submit the current composition if any
             if (currentComposition) {
                 console.log('Submitting composition:', currentComposition);
-                handleKeyPress('submit-composition', currentComposition);
+                keyHandler('submit-composition', currentComposition); // Use keyHandler instead
                 compositionDisplay.textContent = '';
                 currentComposition = '';
             } else {
                 // Regular enter behavior
-                handleKeyPress('enter');
+                keyHandler('enter'); // Use keyHandler instead
             }
         } else if (key === 'backspace') {
             // If we have composition text, delete from that
@@ -433,7 +433,7 @@ const TeluguKeyboard = (function() {
                 compositionDisplay.textContent = currentComposition;
             } else {
                 // Regular backspace behavior
-                handleKeyPress('backspace');
+                keyHandler('backspace'); // Use keyHandler instead
             }
         } else {
             // Add to composition

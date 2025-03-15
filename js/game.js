@@ -314,7 +314,7 @@ const TeluguWordle = (function() {
      * @param {string} input - The keyboard input (character or action)
      * @param {string} [composedText] - Optional composed text for Telugu input
      */
-    function handleKeyInput(input) {
+    function handleKeyInput(input, composedText) {
         console.log('Game received input:', input, composedText);
 
         // Ignore input if game is not in playing state or if animation is in progress
@@ -336,7 +336,13 @@ const TeluguWordle = (function() {
             addLetter(input);
         }
     }
-
+    function handleKeyPress(key) {
+        if (key === 'enter') {
+            if (currentComposition) {
+                handleKeyPress('submit-composition', currentComposition); // This calls itself recursively
+            }
+        }
+    }
     /**
      * Add composed Telugu text to the current guess
      * @param {string} text - The composed Telugu text
