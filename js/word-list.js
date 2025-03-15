@@ -6,42 +6,28 @@
 const TeluguWordList = (function() {
     // Organize words by length (letter count)
     const wordsByLevel = {
-        1: [ // 2-letter words
-            'దీ',  // This
-            'మా',  // Our
-            'నా',  // My
-            'పై',  // Above
-            'ని',  // Down
-            'లో',  // In
-            'కి',  // To
-            'ను',  // Me
-            // Add more 2-letter words
-        ],
         2: [ // 3-letter words
-            'అమ్మ',  // Mother
-            'నాన్న', // Father
-            'ఇల్లు', // House
-            'పిల్ల', // Child
-            'కోడి',  // Chicken
-            'పాము',  // Snake
-            'పులి',  // Tiger
-            // Add more 3-letter words
+            'ఒకటి', //One
+            /*'నాలుగు', //Four
+            'విద్యార్థి', // Student
+            'వంటలు', // Cooking
+            'ఆకాశం', // Sky
+            'బడిలో', // In school
+            'ప్రేమించు', // To love
+            */
         ],
         3: [ // 4-letter words
-            'ఆకాశం', // Sky
+            /* 'ఎనిమిది', //Eight
             'పుస్తకం', // Book
-            'బడిలో', // In school
+            'కుటుంబం', // 
+            'నమస్కారం', // Hello/Greeting
+            'అందమైన', // Beautiful
+            */
             'పంచదార', // Sugar
-            'వంటలు', // Cooking
-            'కుటుంబం', // Family
             // Add more 4-letter words
         ],
         4: [ // 5-letter words
-            'మనదేశము', // Our country
-            'విద్యార్థి', // Student
-            'నమస్కారం', // Hello/Greeting
-            'ప్రేమించు', // To love
-            'అందమైన', // Beautiful
+            //'మనదేశము', // Our country
             'భారతదేశం', // India
             // Add more 5-letter words
         ]
