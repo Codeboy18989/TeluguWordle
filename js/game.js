@@ -34,44 +34,22 @@ const TeluguWordle = (function() {
     
     // Initialize the game
     function init() {
-        if (state.initialized) return;
-        
         // Get DOM references
         state.gameBoard = document.getElementById('game-board');
         
-        // Create the game board grid
+        // Create the game board
         createGameBoard();
         
-        // Initialize keyboard
-        TeluguKeyboard.init(
-            document.getElementById('keyboard-container'),
-            handleKeyInput
-        );
-        
-        // Set up level selector
-        setupLevelSelector();
-        
-        // Load the current level from word list
-        state.level = TeluguWordList.getLevel();
-        
-        // Update level UI
-        updateLevelUI();
-
-        // Check for saved game state
+        // Load saved game state or start new game
         const savedState = GameStorage.loadGameState();
         if (savedState) {
-            // Restore saved game
             restoreGameState(savedState);
         } else {
-            // Start a new game
             startNewGame();
         }
         
-        // Set initialized flag
-        state.initialized = true;
-        
-        // Set up event listeners for modals
-        setupModalListeners();
+        // Set up level selector
+        setupLevelSelector();
     }
     /**
      * Set up level selector

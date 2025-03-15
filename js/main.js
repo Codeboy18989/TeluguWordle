@@ -6,7 +6,7 @@
 // Register service worker for offline capabilities if supported
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
+        navigator.serviceWorker.register('./service-worker.js')
             .then(registration => {
                 console.log('ServiceWorker registration successful');
             })
@@ -17,8 +17,14 @@ if ('serviceWorker' in navigator) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // First initialize the keyboard
+    const keyboardContainer = document.getElementById('keyboard-container');
+    TeluguKeyboard.init(keyboardContainer, TeluguWordle.handleKeyInput);
+    TeluguKeyboard.restoreKeyboardState();
+
     // Initialize the game
     TeluguWordle.init();
+
     // Initialize level indicator based on saved level
     updateLevelIndicator(TeluguWordList.getLevel());
 
@@ -123,8 +129,5 @@ document.addEventListener('DOMContentLoaded', function() {
             GameStorage.saveSettings(newSettings);
         });
     }
-    // Initialize keyboard
-    const keyboardContainer = document.getElementById('keyboard-container');
-    TeluguKeyboard.init(keyboardContainer, TeluguWordle.handleKeyInput);
-    TeluguKeyboard.restoreKeyboardState();
+    
 });

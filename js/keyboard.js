@@ -4,7 +4,81 @@
  */
 
 const TeluguKeyboard = (function() {
+    // Current state
     let isMinimized = false;
+    let keyboardContainer = null;
+    let keyHandler = null;
+    let compositionDisplay = null;
+    let currentComposition = '';
+    let currentTab = 'consonants';
+
+    /**
+     * Initialize the keyboard
+     * @param {HTMLElement} container - The container element for the keyboard
+     * @param {Function} onKeyPress - Callback function for key press events
+     */
+    function init(container, onKeyPress) {
+        keyboardContainer = container; // Store container reference
+        keyHandler = onKeyPress;
+
+        // Create keyboard header
+        createKeyboardHeader();
+        
+        // Create keyboard structure
+        createKeyboardStructure();
+        
+        // Setup composition area
+        setupCompositionArea();
+        
+        // Setup event listeners
+        setupEventListeners();
+        
+        // Show keyboard by default
+        container.classList.remove('minimized');
+        
+        // Show initial tab
+        showTab(currentTab);
+    }
+
+    function createKeyboardHeader() {
+        if (!document.querySelector('.keyboard-header')) {
+            const header = document.createElement('div');
+            header.className = 'keyboard-header';
+            
+            const title = document.createElement('span');
+            title.textContent = 'తెలుగు Keyboard';
+            
+            const minimizeBtn = document.createElement('button');
+            minimizeBtn.id = 'minimize-keyboard';
+            minimizeBtn.className = 'minimize-button';
+            minimizeBtn.textContent = '▼';
+            
+            header.appendChild(title);
+            header.appendChild(minimizeBtn);
+            keyboardContainer.insertBefore(header, keyboardContainer.firstChild);
+            
+            // Setup minimize button functionality
+            minimizeBtn.addEventListener('click', toggleKeyboard);
+        }
+    }
+
+    function createKeyboardStructure() {
+        const keyboard = document.createElement('div');
+        keyboard.id = 'keyboard';
+        keyboardContainer.appendChild(keyboard);
+
+        // Create tabs
+        createTabs(keyboard);
+        
+        // Create main keyboard area
+        const keyboardArea = document.createElement('div');
+        keyboardArea.className = 'keyboard-area';
+        keyboard.appendChild(keyboardArea);
+        
+        // Create combination panel
+        createCombinationPanel();
+    }
+
     // Keyboard sections and layouts
     const keyboardLayout = {
         // Consonants layout - main characters
@@ -34,16 +108,6 @@ const TeluguKeyboard = (function() {
             ['్'] // Virama (Pollu) - removes inherent vowel
         ]
     };
-
-    // Current state
-    let currentTab = 'consonants';
-    let activeElement = null;
-    let keyboardContainer = null;
-    let keyboardElement = null;
-    let combinationPanel = null;
-    let keyHandler = null;
-    let compositionDisplay = null;
-    let currentComposition = '';
     
     // Create keyboard header and minimize button if they don't exist
     if (!document.querySelector('.keyboard-header')) {
@@ -77,7 +141,7 @@ const TeluguKeyboard = (function() {
         
     // Show initial tab
     showTab(currentTab);
-    
+
     function toggleKeyboard() {
         const container = document.getElementById('keyboard-container');
         const minimizeBtn = document.getElementById('minimize-keyboard');
@@ -90,69 +154,6 @@ const TeluguKeyboard = (function() {
         localStorage.setItem('keyboardMinimized', isMinimized);
     }
     
-    /**
-     * Create the keyboard DOM structure
-     */
-    function createKeyboardStructure() {
-        // Create main keyboard element
-        keyboardElement = document.createElement('div');
-        keyboardElement.className = 'keyboard';
-        
-        // Create tabs for switching between keyboard sections
-        const tabsContainer = document.createElement('div');
-        tabsContainer.className = 'keyboard-tabs';
-        
-        // Add tabs
-        const tabs = {
-            'consonants': 'హల్లులు (Consonants)',
-            'vowels': 'అచ్చులు (Vowels)',
-            'vowelDiacritics': 'గుణింతాలు (Vowel Signs)'
-        };
-        
-        for (const [tabId, tabLabel] of Object.entries(tabs)) {
-            const tab = document.createElement('button');
-            tab.className = `keyboard-tab ${tabId === currentTab ? 'active' : ''}`;
-            tab.dataset.tab = tabId;
-            tab.textContent = tabLabel;
-            tabsContainer.appendChild(tab);
-        }
-        
-        keyboardElement.appendChild(tabsContainer);
-        
-        // Create sections for each keyboard layout
-        for (const [sectionId, layout] of Object.entries(keyboardLayout)) {
-            const section = document.createElement('div');
-            section.className = `keyboard-section ${sectionId === currentTab ? 'active' : ''}`;
-            section.dataset.section = sectionId;
-            
-            // Create rows and keys
-            layout.forEach(row => {
-                const keyboardRow = document.createElement('div');
-                keyboardRow.className = 'keyboard-row';
-                
-                row.forEach(char => {
-                    const key = document.createElement('button');
-                    key.className = 'key';
-                    key.dataset.char = char;
-                    key.textContent = char;
-                    keyboardRow.appendChild(key);
-                });
-                
-                section.appendChild(keyboardRow);
-            });
-            
-            keyboardElement.appendChild(section);
-        }
-        
-        // Add special function keys (backspace, enter, etc.)
-        addFunctionKeys();
-        
-        // Create combination panel (initially hidden)
-        createCombinationPanel();
-        
-        // Append keyboard to container
-        keyboardContainer.appendChild(keyboardElement);
-    }
     
     /**
      * Add function keys to the keyboard
