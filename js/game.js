@@ -194,8 +194,8 @@ const TeluguWordle = (function() {
      * Adjust the number of visible tiles based on the target word length
      * @param {number} wordLength - The length of the current target word
      */
-    function adjustTileVisibility(wordLength) {
-        console.log('Adjusting tile visibility for word length:', wordLength);
+    function adjustTileVisibility(boxCount) {
+        console.log('Adjusting tile visibility for box count:', boxCount);
         
         // Update all rows to show only the required number of tiles
         for (let i = 0; i < CONFIG.MAX_ATTEMPTS; i++) {
@@ -212,7 +212,7 @@ const TeluguWordle = (function() {
         }
         
         // Also adjust the row styles for proper centering
-        document.documentElement.style.setProperty('--current-word-length', wordLength);
+        document.documentElement.style.setProperty('--current-word-length', boxCount);
     }
     
     /**
@@ -452,9 +452,9 @@ const TeluguWordle = (function() {
         console.log('Guess parts:', currentGuessParts);
         console.log('Required box count:', boxCount);
         
-        // Check if we have a complete word matching the target length
-        if (currentGuessParts.length !== targetWordLength) {
-            showNotification(`${targetWordLength} అక్షరాల పదం ఉండాలి (Word must be ${boxCount} units)`);
+    // Check if we have a complete word matching the required box count
+     if (currentGuessParts.length !== boxCount) {
+            showNotification(`${boxCount} అక్షరాల పదం ఉండాలి (Word must be ${boxCount} units)`);
             shakeCurrentRow();
             return;
         }
