@@ -128,22 +128,23 @@ const TeluguWordle = (function() {
         const board = document.getElementById('game-board');
         board.innerHTML = ''; // Clear existing board
         
+        // Get the current level's word length
+        const currentBoxCount = TeluguWordList.getLevelWordLength(TeluguWordList.getLevel());
+        
         // Create rows
         for (let i = 0; i < CONFIG.MAX_ATTEMPTS; i++) {
             const row = document.createElement('div');
             row.className = 'row';
             
-            // Always create 5 tiles (maximum possible)
-            for (let j = 0; j < 5; j++) {
+            // Create only the number of tiles needed for current level
+            for (let j = 0; j < currentBoxCount; j++) {
                 const tile = document.createElement('div');
                 tile.className = 'tile';
                 row.appendChild(tile);
             }
             board.appendChild(row);
-            
         }
-        // Initial adjustment based on current level
-        adjustTileVisibility(TeluguWordList.getLevelWordLength(currentLevel));
+        
     }
     
     /**

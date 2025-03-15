@@ -3,6 +3,18 @@
  * Entry point for the Telugu Wordle game application.
  * Initializes the game and sets up event listeners.
  */
+// Register service worker for offline capabilities if supported
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful');
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+    });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the game
@@ -111,16 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
             GameStorage.saveSettings(newSettings);
         });
     }
-    
-    // Register service worker for offline capabilities if supported
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            }, function(err) {
-                console.log('ServiceWorker registration failed: ', err);
-            });
-        });
-    }
-    
+    // Initialize keyboard
+    const keyboardContainer = document.getElementById('keyboard-container');
+    TeluguKeyboard.init(keyboardContainer, TeluguWordle.handleKeyInput);
+    TeluguKeyboard.restoreKeyboardState();
 });
