@@ -312,6 +312,7 @@ const TeluguWordle = (function() {
     /**
      * Handle keyboard input
      * @param {string} input - The keyboard input (character or action)
+     * @param {string} [composedText] - Optional composed text for Telugu input
      */
     function handleKeyInput(input) {
         // Ignore input if game is not in playing state or if animation is in progress
@@ -324,10 +325,42 @@ const TeluguWordle = (function() {
             submitGuess();
         } else if (input === 'backspace') {
             deleteLetter();
+        } else if (input === 'submit-composition' && composedText) {
+            // Handle composed Telugu text
+            addComposedText(composedText);
         } else {
             // Handle character input
             addLetter(input);
         }
+    }
+
+    /**
+     * Add composed Telugu text to the current guess
+     * @param {string} text - The composed Telugu text
+     */
+    function addComposedText(text) {
+        // Split the text into proper Telugu units
+        const textUnits = TeluguUtils.splitTeluguWord(text);
+        
+        // Get current guess parts
+        const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
+        
+        // Check if we can add all the new units
+        const targetWordLength = TeluguWordList.getLevelWordLength(state.level);
+        if (currentGuessParts.length + textUnits.length > targetWordLength) {
+            // Too many units, show notification
+            showNotification(`Word can only be ${targetWordLength} units long`);
+            return;
+        }
+        
+        // Add the composed text to current guess
+        state.currentGuess += text;
+        
+        // Update the UI
+        updateCurrentRow();
+        
+        // Save game state
+        saveGameState();
     }
     
     /**

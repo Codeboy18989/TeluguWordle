@@ -166,95 +166,63 @@ const TeluguUtils = (function() {
 
     // Split a Telugu word into its constituent parts for game logic
     function splitTeluguWord(word) {
-        const parts = [];
+        // This is a more linguistically accurate approach
+        const syllabicUnits = [];
+        let currentUnit = '';
         let i = 0;
         
-        // If word is empty or null, return empty array
-        if (!word || word.length === 0) {
-            return parts;
-        }
-        
-        console.log('Splitting word:', word, 'length:', word.length);
-        
         while (i < word.length) {
-            // Check for consonant-vowel combinations with anusvara or visarga
-            if (i < word.length - 2 && 
-                isConsonant(word[i]) && 
-                isVowelDiacritic(word[i+1]) && 
-                (word[i+2] === 'ం' || word[i+2] === 'ః')) {
-                parts.push(word.substring(i, i+3));
-                console.log('  Found consonant-vowel with anusvara/visarga:', word.substring(i, i+3));
-                i += 3;
-            }
-            // Check for consonant with anusvara or visarga (without vowel modifier)
-            else if (i < word.length - 1 && 
-                     isConsonant(word[i]) && 
-                     (word[i+1] === 'ం' || word[i+1] === 'ః')) {
-                parts.push(word.substring(i, i+2));
-                console.log('  Found consonant with anusvara/visarga:', word.substring(i, i+2));
-                i += 2;
-            }
-            // Check for vowel with anusvara or visarga
-            else if (i < word.length - 1 && 
-                     isVowel(word[i]) && 
-                     (word[i+1] === 'ం' || word[i+1] === 'ః')) {
-                parts.push(word.substring(i, i+2));
-                console.log('  Found vowel with anusvara/visarga:', word.substring(i, i+2));
-                i += 2;
-            }
-            // Check for consonant-vowel combinations
-            else if (i < word.length - 1 && isConsonant(word[i]) && isVowelDiacritic(word[i+1])) {
-                parts.push(word.substring(i, i+2));
-                console.log('  Found consonant-vowel:', word.substring(i, i+2));
-                i += 2;
-            }
-            // Check for consonant-virama-consonant (conjuncts)
-            else if (i < word.length - 2 && isConsonant(word[i]) && isVirama(word[i+1]) && isConsonant(word[i+2])) {
-                // Handle special cases for conjuncts with ZWJ or ZWNJ
-                if (i < word.length - 3 && (word[i+2] === '\u200C' || word[i+2] === '\u200D')) {
-                    parts.push(word.substring(i, i+4));
-                    console.log('  Found conjunct with ZWJ/ZWNJ:', word.substring(i, i+4));
-                    i += 4;
-                } else {
-                    // Treat entire conjunct as a single unit
-                    let conjunctEnd = i + 3;
-                    
-                    // Look ahead for additional consonants in the conjunct
-                    while (conjunctEnd < word.length - 1 && 
-                          isVirama(word[conjunctEnd-1]) && 
-                          isConsonant(word[conjunctEnd])) {
-                        conjunctEnd++;
-                    }
-                    
-                    // Check if there's a vowel diacritic after the conjunct
-                    if (conjunctEnd < word.length && isVowelDiacritic(word[conjunctEnd])) {
-                        conjunctEnd++;
-                    }
-                    
-                    // Check if there's an anusvara or visarga after the conjunct+vowel
-                    if (conjunctEnd < word.length && 
-                        (word[conjunctEnd] === 'ం' || word[conjunctEnd] === 'ః')) {
-                        conjunctEnd++;
-                    }
-                    
-                    parts.push(word.substring(i, conjunctEnd));
-                    console.log('  Found complex conjunct:', word.substring(i, conjunctEnd));
-                    i = conjunctEnd;
+            const char = word[i];
+            
+            // If it's an independent vowel or consonant, start a new unit
+            if (isIndependentVowel(char) || isConsonant(char)) {
+                // If we already have a unit, push it
+                if (currentUnit) {
+                    syllabicUnits.push(currentUnit);
+                    currentUnit = '';
                 }
+                
+                // Start new unit with this character
+                currentUnit = char;
+                
+                // Look ahead for vowel marks or virama that modify this character
+                let j = i + 1;
+                while (j < word.length && (isVowelMark(word[j]) || isVirama(word[j]))) {
+                    currentUnit += word[j];
+                    j++;
+                }
+                
+                // If we found a virama followed by another consonant, this is a conjunct
+                // and should be treated as a single unit
+                if (j < word.length && currentUnit.endsWith('్') && isConsonant(word[j])) {
+                    currentUnit += word[j];
+                    
+                    // Look ahead for any vowel marks on the second consonant
+                    j++;
+                    while (j < word.length && isVowelMark(word[j])) {
+                        currentUnit += word[j];
+                        j++;
+                    }
+                }
+                
+                i = j - 1; // Adjust main loop counter (will be incremented at end of loop)
+            } else {
+                // For any other characters (punctuation, etc.)
+                if (currentUnit) {
+                    syllabicUnits.push(currentUnit);
+                }
+                currentUnit = char;
             }
-            // Single characters (vowels, consonants, or others)
-            else {
-                parts.push(word[i]);
-                console.log('  Found single char:', word[i], 
-                          isVowel(word[i]) ? '(vowel)' : 
-                          isConsonant(word[i]) ? '(consonant)' : 
-                          '(other)');
-                i++;
-            }
+            
+            i++;
         }
         
-        console.log('Split result:', parts, 'count:', parts.length);
-        return parts;
+        // Add the last unit if any
+        if (currentUnit) {
+            syllabicUnits.push(currentUnit);
+        }
+        
+        return syllabicUnits;
     }
 
     // Compare two Telugu characters (or character combinations) for equality

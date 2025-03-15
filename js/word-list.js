@@ -130,12 +130,19 @@ const TeluguWordList = (function() {
     }
     
     /**
-     * Get expected word length for a level
+     * Get expected word length for a level in terms of syllabic units
      * @param {number} level - The level (1-4)
-     * @returns {number} The expected word length for the level
+     * @returns {number} The expected syllabic unit count for the level
      */
     function getLevelWordLength(level) {
-        return level + 1; // Level 1 = 2 letters, Level 2 = 3 letters, etc.
+        // Adjust this mapping based on your actual Telugu word structure
+        switch(level) {
+            case 1: return 1; // Level 1: single syllabic unit
+            case 2: return 2; // Level 2: two syllabic units
+            case 3: return 3; // Level 3: three syllabic units
+            case 4: return 4; // Level 4: four syllabic units
+            default: return 2;
+        }
     }
     
     /**

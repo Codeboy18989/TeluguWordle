@@ -54,6 +54,9 @@ const TeluguKeyboard = (function() {
         // Create the main keyboard structure
         createKeyboardStructure();
         
+        // Set up composition area
+        setupCompositionArea();
+
         // Set up event listeners
         setupEventListeners();
         
@@ -365,7 +368,57 @@ const TeluguKeyboard = (function() {
             key.classList.remove('correct', 'present', 'absent');
         });
     }
+
+    // Add this new function
+    function setupCompositionArea() {
+        compositionDisplay = document.querySelector('.composition-display');
+        
+        // Clear button
+        document.querySelector('.composition-clear').addEventListener('click', () => {
+            compositionDisplay.textContent = '';
+            currentComposition = '';
+        });
+        
+        // Submit button
+        document.querySelector('.composition-submit').addEventListener('click', () => {
+            if (currentComposition) {
+                // Submit the composed text to the game
+                keyHandler('submit-composition', currentComposition);
+                
+                // Clear the composition area
+                compositionDisplay.textContent = '';
+                currentComposition = '';
+            }
+        });
+    }
     
+    // Modify the key press handling
+    function handleKeyPress(key) {
+        if (key === 'enter') {
+            // Submit the current composition if any
+            if (currentComposition) {
+                keyHandler('submit-composition', currentComposition);
+                compositionDisplay.textContent = '';
+                currentComposition = '';
+            } else {
+                // Regular enter behavior
+                keyHandler('enter');
+            }
+        } else if (key === 'backspace') {
+            // If we have composition text, delete from that
+            if (currentComposition) {
+                currentComposition = currentComposition.slice(0, -1);
+                compositionDisplay.textContent = currentComposition;
+            } else {
+                // Regular backspace behavior
+                keyHandler('backspace');
+            }
+        } else {
+            // Add to composition
+            currentComposition += key;
+            compositionDisplay.textContent = currentComposition;
+        }
+    }
     // Public API
     return {
         init,
