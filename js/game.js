@@ -179,8 +179,9 @@ const TeluguWordle = (function() {
         // Reset keyboard
         TeluguKeyboard.resetKeyStatuses();
         
-        // THIS IS THE KEY PART - Update UI based on the word length
-        adjustTileVisibility(state.targetWordParts.length);
+        // KEY PART - Use fixed box count based on level instead of word length
+        const boxCount = TeluguWordList.getLevelWordLength(state.level);
+        adjustTileVisibility(boxCount);
         
         // Save initial state
         saveGameState();
@@ -196,16 +197,13 @@ const TeluguWordle = (function() {
     function adjustTileVisibility(wordLength) {
         console.log('Adjusting tile visibility for word length:', wordLength);
         
-        // Ensure wordLength is within our supported range
-        wordLength = Math.max(CONFIG.MIN_WORD_LENGTH, Math.min(wordLength, CONFIG.MAX_WORD_LENGTH));
-        
         // Update all rows to show only the required number of tiles
         for (let i = 0; i < CONFIG.MAX_ATTEMPTS; i++) {
             const row = state.gameBoard.querySelector(`.row[data-row="${i}"]`);
             const tiles = row.querySelectorAll('.tile');
             
             tiles.forEach((tile, index) => {
-                if (index < wordLength) {
+                if (index < boxCount) {
                     tile.classList.remove('hidden-tile');
                 } else {
                     tile.classList.add('hidden-tile');
@@ -240,8 +238,9 @@ const TeluguWordle = (function() {
         // Update level UI
         updateLevelUI();
 
-        // THIS IS THE KEY PART - Adjust tiles for the restored word
-        adjustTileVisibility(state.targetWordParts.length);
+        // Use fixed box count based on level
+        const boxCount = TeluguWordList.getLevelWordLength(state.level);
+        adjustTileVisibility(boxCount);
         
         // Update UI
         clearBoard();
@@ -355,10 +354,10 @@ const TeluguWordle = (function() {
         const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
         
         // Check if we can add all the new units
-        const targetWordLength = TeluguWordList.getLevelWordLength(state.level);
-        if (currentGuessParts.length + textUnits.length > targetWordLength) {
+        const boxCount = TeluguWordList.getLevelWordLength(state.level);
+        if (currentGuessParts.length + textUnits.length > boxCount) {
             // Too many units, show notification
-            showNotification(`Word can only be ${targetWordLength} units long`);
+            showNotification(`Word can only be ${boxCount} units long`);
             return;
         }
         
@@ -447,15 +446,15 @@ const TeluguWordle = (function() {
      */
     function submitGuess() {
         const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
-        const targetWordLength = state.targetWordParts.length; // DYNAMIC length
+        const boxCount = TeluguWordList.getLevelWordLength(state.level);
         
         console.log('Submitting guess:', state.currentGuess);
         console.log('Guess parts:', currentGuessParts);
-        console.log('Target length:', targetWordLength);
+        console.log('Required box count:', boxCount);
         
         // Check if we have a complete word matching the target length
         if (currentGuessParts.length !== targetWordLength) {
-            showNotification(`${targetWordLength} అక్షరాల పదం ఉండాలి (Word must be ${targetWordLength} units)`);
+            showNotification(`${targetWordLength} అక్షరాల పదం ఉండాలి (Word must be ${boxCount} units)`);
             shakeCurrentRow();
             return;
         }
