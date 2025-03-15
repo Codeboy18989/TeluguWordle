@@ -45,44 +45,39 @@ const TeluguKeyboard = (function() {
     let compositionDisplay = null;
     let currentComposition = '';
     
-    /**
-     * Initialize the keyboard
-     * @param {HTMLElement} container - The container element for the keyboard
-     * @param {Function} onKeyPress - Callback function for key press events
-     */
-    function init(container, onKeyPress) {
-        keyHandler = onKeyPress;
-
-        // Create keyboard header and minimize button if they don't exist
-        if (!document.querySelector('.keyboard-header')) {
-            const header = document.createElement('div');
-            header.className = 'keyboard-header';
-            
-            const title = document.createElement('span');
-            title.textContent = 'తెలుగు Keyboard';
-            
-            const minimizeBtn = document.createElement('button');
-            minimizeBtn.id = 'minimize-keyboard';
-            minimizeBtn.className = 'minimize-button';
-            minimizeBtn.textContent = '▼';
-            
-            header.appendChild(title);
-            header.appendChild(minimizeBtn);
-            container.insertBefore(header, container.firstChild);
-        }
+    // Create keyboard header and minimize button if they don't exist
+    if (!document.querySelector('.keyboard-header')) {
+        const header = document.createElement('div');
+        header.className = 'keyboard-header';
         
-        // Setup minimize button functionality
-        const minimizeBtn = document.getElementById('minimize-keyboard');
-        minimizeBtn.addEventListener('click', toggleKeyboard);
-
-        // Create keyboard layout
-        createKeyboardLayout(container);
-        setupEventListeners();
+        const title = document.createElement('span');
+        title.textContent = 'తెలుగు Keyboard';
         
-        // Show keyboard by default
-        container.classList.remove('minimized');
+        const minimizeBtn = document.createElement('button');
+        minimizeBtn.id = 'minimize-keyboard';
+        minimizeBtn.className = 'minimize-button';
+        minimizeBtn.textContent = '▼';
+        
+        header.appendChild(title);
+        header.appendChild(minimizeBtn);
+        container.insertBefore(header, container.firstChild);
     }
 
+    // Setup minimize button functionality
+    const minimizeBtn = document.getElementById('minimize-keyboard');
+    minimizeBtn.addEventListener('click', toggleKeyboard);
+
+    // Create keyboard layout - using the correct function name
+    createKeyboardStructure();
+    setupCompositionArea();
+    setupEventListeners();
+
+    // Show keyboard by default
+    container.classList.remove('minimized');
+        
+    // Show initial tab
+    showTab(currentTab);
+    
     function toggleKeyboard() {
         const container = document.getElementById('keyboard-container');
         const minimizeBtn = document.getElementById('minimize-keyboard');
