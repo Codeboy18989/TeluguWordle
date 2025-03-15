@@ -228,6 +228,15 @@ const TeluguKeyboard = (function() {
                 }
             }
         });
+        // Add touch event handlers
+        const keys = document.querySelectorAll('.keyboard-button');
+        keys.forEach(key => {
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Prevent double-firing on mobile
+                handleKeyPress(key.dataset.key);
+            });
+        });
+
     }
     
     /**

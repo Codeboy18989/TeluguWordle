@@ -125,32 +125,25 @@ const TeluguWordle = (function() {
      * Create the game board DOM elements
      */
     function createGameBoard() {
-        // Clear existing board
-        state.gameBoard.innerHTML = '';
+        const board = document.getElementById('game-board');
+        board.innerHTML = ''; // Clear existing board
         
         // Create rows
         for (let i = 0; i < CONFIG.MAX_ATTEMPTS; i++) {
             const row = document.createElement('div');
             row.className = 'row';
-            row.dataset.row = i;
             
-            // Create tiles in the row based on the current word length
-            // We'll adjust this dynamically when a new word is selected
-            for (let j = 0; j < CONFIG.MAX_WORD_LENGTH; j++) {
+            // Always create 5 tiles (maximum possible)
+            for (let j = 0; j < 5; j++) {
                 const tile = document.createElement('div');
                 tile.className = 'tile';
-                tile.dataset.col = j;
-                
-                // Initially hide tiles that exceed the minimum length
-                if (j >= CONFIG.MIN_WORD_LENGTH) {
-                    tile.classList.add('hidden-tile');
-                }
-                
                 row.appendChild(tile);
             }
+            board.appendChild(row);
             
-            state.gameBoard.appendChild(row);
         }
+        // Initial adjustment based on current level
+        adjustTileVisibility(getLevelWordLength(currentLevel));
     }
     
     /**
@@ -195,24 +188,14 @@ const TeluguWordle = (function() {
      * @param {number} wordLength - The length of the current target word
      */
     function adjustTileVisibility(boxCount) {
-        console.log('Adjusting tile visibility for box count:', boxCount);
-        
-        // Update all rows to show only the required number of tiles
-        for (let i = 0; i < CONFIG.MAX_ATTEMPTS; i++) {
-            const row = state.gameBoard.querySelector(`.row[data-row="${i}"]`);
+        const rows = document.querySelectorAll('.row');
+        rows.forEach(row => {
             const tiles = row.querySelectorAll('.tile');
-            
             tiles.forEach((tile, index) => {
-                if (index < boxCount) {
-                    tile.classList.remove('hidden-tile');
-                } else {
-                    tile.classList.add('hidden-tile');
-                }
+                // Show only tiles up to boxCount, hide the rest
+                tile.style.display = index < boxCount ? 'flex' : 'none';
             });
-        }
-        
-        // Also adjust the row styles for proper centering
-        document.documentElement.style.setProperty('--current-word-length', boxCount);
+        });
     }
     
     /**

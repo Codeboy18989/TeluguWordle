@@ -111,26 +111,31 @@ main {
     margin: 0 auto;
 }
 
+.game-board {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px;
+    max-width: 350px;
+    margin: 0 auto;
+}
+
 .row {
-    display: grid;
-    grid-template-columns: repeat(var(--current-word-length), var(--tile-size));
+    display: flex;
     gap: 5px;
     justify-content: center;
-    margin-bottom: 5px;
 }
 
 .tile {
-    height: var(--tile-size);
-    width: var(--tile-size);
-    border: 2px solid var(--color-tile-border);
+    width: 60px;
+    height: 60px;
+    border: 2px solid #d3d6da;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: min(2rem, 6vw); /* Responsive font size */
+    font-size: 2rem;
     font-weight: bold;
-    user-select: none;
-    position: relative;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    text-transform: uppercase;
 }
 
 .tile.hidden-tile {
@@ -421,14 +426,34 @@ main {
     header h1 {
         font-size: 22px;
     }
-    
+
+    .game-board {
+        max-width: 100%;
+        padding: 5px;
+    }
+
     .tile {
+        width: 45px;
+        height: 45px;
         font-size: 1.5rem;
     }
     
     #game-board {
         max-width: 320px;
     }
+
+    .keyboard-row button {
+        height: 45px;
+        margin: 2px;
+        padding: 0;
+    }
+}
+
+/* Prevent text selection on mobile */
+.tile, .keyboard-button {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 @media (max-width: 350px) {
