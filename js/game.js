@@ -143,7 +143,7 @@ const TeluguWordle = (function() {
             
         }
         // Initial adjustment based on current level
-        adjustTileVisibility(getLevelWordLength(currentLevel));
+        adjustTileVisibility(TeluguWordList.getLevelWordLength(currentLevel));
     }
     
     /**

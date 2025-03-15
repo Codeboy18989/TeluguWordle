@@ -126,7 +126,7 @@ const TeluguWordList = (function() {
             case 1: return 3; // Level 1: always 3 boxes
             case 2: return 4; // Level 2: always 4 boxes
             case 3: return 5; // Level 3: always 5 boxes
-            default: return 4; // Default to level 2
+            default: return 3; // Default to level 1
         }
     }
     
@@ -166,7 +166,7 @@ const TeluguWordList = (function() {
         isValidWord,
         setLevel,
         getLevel,
-        getLevelWordLength,
+        getLevelWordLength: getLevelWordLength,
         getCurrentLevelWordLength
     };
 })();
