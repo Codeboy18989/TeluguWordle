@@ -12,6 +12,35 @@ const TeluguKeyboard = (function() {
     let currentComposition = '';
     let currentTab = 'consonants';
 
+    // Keyboard sections and layouts
+    const keyboardLayout = {
+        // Consonants layout - main characters
+        consonants: [
+            ['క', 'ఖ', 'గ', 'ఘ', 'ఙ'],
+            ['చ', 'ఛ', 'జ', 'ఝ', 'ఞ'],
+            ['ట', 'ఠ', 'డ', 'ఢ', 'ణ'],
+            ['త', 'థ', 'ద', 'ధ', 'న'],
+            ['ప', 'ఫ', 'బ', 'భ', 'మ'],
+            ['య', 'ర', 'ల', 'వ', 'శ'],
+            ['ష', 'స', 'హ', 'ళ', 'క్ష'],
+        ],
+        
+        // Vowels layout
+        vowels: [
+            ['అ', 'ఆ', 'ఇ', 'ఈ', 'ఉ'],
+            ['ఊ', 'ఋ', 'ౠ', 'ఌ', 'ౡ'],
+            ['ఎ', 'ఏ', 'ఐ', 'ఒ', 'ఓ'],
+            ['ఔ', 'అం', 'అః'],
+        ],
+        
+        // Vowel diacritics (for combining with consonants)
+        vowelDiacritics: [
+            ['ా', 'ి', 'ీ', 'ు', 'ూ'],
+            ['ృ', 'ౄ', 'ె', 'ే', 'ై'],
+            ['ొ', 'ో', 'ౌ', 'ం', 'ః'],
+            ['్'] // Virama (Pollu) - removes inherent vowel
+        ]
+    };
     /**
      * Initialize the keyboard
      * @param {HTMLElement} container - The container element for the keyboard
@@ -78,36 +107,6 @@ const TeluguKeyboard = (function() {
         // Create combination panel
         createCombinationPanel();
     }
-
-    // Keyboard sections and layouts
-    const keyboardLayout = {
-        // Consonants layout - main characters
-        consonants: [
-            ['క', 'ఖ', 'గ', 'ఘ', 'ఙ'],
-            ['చ', 'ఛ', 'జ', 'ఝ', 'ఞ'],
-            ['ట', 'ఠ', 'డ', 'ఢ', 'ణ'],
-            ['త', 'థ', 'ద', 'ధ', 'న'],
-            ['ప', 'ఫ', 'బ', 'భ', 'మ'],
-            ['య', 'ర', 'ల', 'వ', 'శ'],
-            ['ష', 'స', 'హ', 'ళ', 'క్ష'],
-        ],
-        
-        // Vowels layout
-        vowels: [
-            ['అ', 'ఆ', 'ఇ', 'ఈ', 'ఉ'],
-            ['ఊ', 'ఋ', 'ౠ', 'ఌ', 'ౡ'],
-            ['ఎ', 'ఏ', 'ఐ', 'ఒ', 'ఓ'],
-            ['ఔ', 'అం', 'అః'],
-        ],
-        
-        // Vowel diacritics (for combining with consonants)
-        vowelDiacritics: [
-            ['ా', 'ి', 'ీ', 'ు', 'ూ'],
-            ['ృ', 'ౄ', 'ె', 'ే', 'ై'],
-            ['ొ', 'ో', 'ౌ', 'ం', 'ః'],
-            ['్'] // Virama (Pollu) - removes inherent vowel
-        ]
-    };
     
     // Create keyboard header and minimize button if they don't exist
     if (!document.querySelector('.keyboard-header')) {
