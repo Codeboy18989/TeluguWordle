@@ -115,9 +115,28 @@ const TeluguUtils = (function() {
         return vowels.hasOwnProperty(char);
     }
 
+    /**
+     * Check if a character is a vowel mark (diacritic) in Telugu
+     * @param {string} char - The character to check
+     * @returns {boolean} True if the character is a vowel mark
+     */
+    function isVowelMark(char) {
+        // Telugu vowel marks: ా, ి, ీ, ు, ూ, ృ, ౄ, ె, ే, ై, ొ, ో, ౌ, ం, ః
+        const vowelMarks = [
+            'ా', 'ి', 'ీ', 'ు', 'ూ', 'ృ', 'ౄ', 'ె', 'ే', 'ై', 'ొ', 'ో', 'ౌ', 'ం', 'ః'
+        ];
+        return vowelMarks.includes(char);
+    }
+
     // Helper function to check if a character is a consonant
     function isConsonant(char) {
-        return consonants.hasOwnProperty(char);
+        // Telugu consonants: క, ఖ, గ, ఘ, ఙ, చ, ఛ, జ, ఝ, ఞ, ట, ఠ, డ, ఢ, ణ, త, థ, ద, ధ, న, ప, ఫ, బ, భ, మ, య, ర, ల, వ, శ, ష, స, హ, ళ, క్ష, ఱ
+        const consonants = [
+            'క', 'ఖ', 'గ', 'ఘ', 'ఙ', 'చ', 'ఛ', 'జ', 'ఝ', 'ఞ', 'ట', 'ఠ', 'డ', 'ఢ', 'ణ', 
+            'త', 'థ', 'ద', 'ధ', 'న', 'ప', 'ఫ', 'బ', 'భ', 'మ', 'య', 'ర', 'ల', 'వ', 'శ', 
+            'ష', 'స', 'హ', 'ళ', 'క్ష', 'ఱ'
+        ];
+        return consonants.includes(char);
     }
 
     // Helper function to check if a character is a vowel diacritic
@@ -164,6 +183,18 @@ const TeluguUtils = (function() {
         return combinations;
     }
 
+    /**
+     * Check if a character is an independent vowel in Telugu
+     * @param {string} char - The character to check
+     * @returns {boolean} True if the character is an independent vowel
+     */
+    function isIndependentVowel(char) {
+        // Telugu independent vowels: అ, ఆ, ఇ, ఈ, ఉ, ఊ, ఋ, ౠ, ఌ, ౡ, ఎ, ఏ, ఐ, ఒ, ఓ, ఔ
+        const independentVowels = [
+            'అ', 'ఆ', 'ఇ', 'ఈ', 'ఉ', 'ఊ', 'ఋ', 'ౠ', 'ఌ', 'ౡ', 'ఎ', 'ఏ', 'ఐ', 'ఒ', 'ఓ', 'ఔ'
+        ];
+        return independentVowels.includes(char);
+    }
     // Split a Telugu word into its constituent parts for game logic
     function splitTeluguWord(word) {
         // This is a more linguistically accurate approach

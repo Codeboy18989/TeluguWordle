@@ -529,6 +529,7 @@ main {
 
 /* Composition area for building Telugu characters */
 .composition-area {
+    display: block;
     width: 100%;
     max-width: 350px;
     margin: 15px auto;

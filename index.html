@@ -20,6 +20,7 @@
                 <button id="settings-button" aria-label="Settings">⚙️</button>
             </div>
         </header>
+    
     <!-- Add this after the header section -->
     <div class="level-selector">
         <button class="level-btn" data-level="1">Level 1<span>2 Letters</span></button>
@@ -27,19 +28,19 @@
         <button class="level-btn" data-level="3">Level 3<span>4 Letters</span></button>
         <button class="level-btn" data-level="4">Level 4<span>5 Letters</span></button>
     </div>
+    <div class="composition-area">
+        <div class="composition-display"></div>
+        <div class="composition-controls">
+            <button class="composition-clear">Clear</button>
+            <button class="composition-submit">Submit</button>
+        </div>
+    </div>
         <main>
             <!-- Game board - 6 rows with 5 tiles each for guesses -->
             <div id="game-board">
                 <!-- Rows will be dynamically generated -->
             </div>
-            <!-- Add this below the game board -->
-            <div class="composition-area">
-                <div class="composition-display"></div>
-                <div class="composition-controls">
-                    <button class="composition-clear">Clear</button>
-                    <button class="composition-submit">Submit</button>
-                </div>
-            </div>
+
             <!-- Notification area for game messages -->
             <div id="notification" class="hidden"></div>
 
