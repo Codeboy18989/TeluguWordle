@@ -77,6 +77,39 @@
         showLoginPanel();
     }
     
+    function loadAdminPanel() {
+        // Existing code...
+        
+        // Add level dropdown to the form
+        const levelSelect = document.createElement('select');
+        levelSelect.id = 'word-level';
+        levelSelect.innerHTML = `
+            <option value="1">Level 1 (2 letters)</option>
+            <option value="2">Level 2 (3 letters)</option>
+            <option value="3">Level 3 (4 letters)</option>
+            <option value="4">Level 4 (5 letters)</option>
+        `;
+        
+        // Add level selection to the form
+        const levelGroup = document.createElement('div');
+        levelGroup.className = 'form-group';
+        levelGroup.innerHTML = `<label for="word-level">Level:</label>`;
+        levelGroup.appendChild(levelSelect);
+        
+        // Insert after the new-word input
+        const newWordGroup = document.getElementById('new-word').parentElement;
+        newWordGroup.after(levelGroup);
+        
+        // Validate word length based on selected level
+        document.getElementById('new-word').addEventListener('input', function() {
+            validateWordForLevel(this.value, levelSelect.value);
+        });
+        
+        levelSelect.addEventListener('change', function() {
+            validateWordForLevel(document.getElementById('new-word').value, this.value);
+        });
+    }
+    
     // Show admin panel, hide login
     function showAdminPanel() {
         loginPanel.style.display = 'none';
@@ -131,38 +164,52 @@
         wordHistory.innerHTML = historyHTML;
     }
     
-    // Handle setting a new word
+    // Add validation for word length based on level
+    function validateWordForLevel(word, level) {
+        if (!word) return;
+        
+        const wordParts = TeluguUtils.splitTeluguWord(word);
+        const expectedLength = parseInt(level) + 1; // Level 1 = 2 letters, etc.
+        
+        const wordMessage = document.getElementById('word-message');
+        
+        if (wordParts.length !== expectedLength) {
+            wordMessage.textContent = `Word must be ${expectedLength} Telugu units for Level ${level}`;
+            wordMessage.className = 'error-message';
+            return false;
+        } else {
+            wordMessage.textContent = '';
+            return true;
+        }
+    }
+
+    // Update the set word function to store level info
     function handleSetWord() {
-        const newWord = newWordInput.value.trim();
+        const newWord = document.getElementById('new-word').value.trim();
+        const selectedLevel = document.getElementById('word-level').value;
+        const targetDate = document.getElementById('word-date').valueAsDate || new Date();
         
-        // Validate the word
-        if (!newWord) {
-            wordMessage.textContent = 'Please enter a word';
-            wordMessage.className = 'error-message';
+        // Validate
+        if (!newWord || !validateWordForLevel(newWord, selectedLevel)) {
             return;
         }
         
-        // Check if it's a valid Telugu word
-        const wordParts = TeluguUtils.splitTeluguWord(newWord);
-        if (wordParts.length < 3 || wordParts.length > 5) {
-            wordMessage.textContent = 'Word must be 3-5 Telugu units in length';
-            wordMessage.className = 'error-message';
-            return;
-        }
-        
-        // Get the target date
-        const targetDate = wordDateInput.valueAsDate || new Date();
+        // Get date string
         const dateString = formatDate(targetDate);
         
-        // Save the word
+        // Save the word with level info
         const dailyWords = getDailyWords();
-        dailyWords[dateString] = newWord;
+        dailyWords[dateString] = {
+            word: newWord,
+            level: parseInt(selectedLevel)
+        };
         saveDailyWords(dailyWords);
         
         // Update UI
-        wordMessage.textContent = `Word "${newWord}" set for ${dateString}`;
+        const wordMessage = document.getElementById('word-message');
+        wordMessage.textContent = `Word "${newWord}" (Level ${selectedLevel}) set for ${dateString}`;
         wordMessage.className = 'success-message';
-        newWordInput.value = '';
+        document.getElementById('new-word').value = '';
         
         // Refresh displays
         loadCurrentWord();

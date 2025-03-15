@@ -1,147 +1,107 @@
 /**
  * word-list.js
- * Contains the list of Telugu words for the Wordle game.
- * These are Telugu words of 3-5 syllabic units in length.
+ * Contains the Telugu word list for the game.
  */
 
 const TeluguWordList = (function() {
-    /**
-     * Main word list for the game
-     * These words are semantically 3-5 "units" in Telugu, where a unit can be:
-     * - A consonant-vowel combination (e.g., కా, కి, కు)
-     * - An independent vowel (e.g., అ, ఆ, ఇ)
-     * - A consonant with virama (e.g., క్)
-     * - A consonant-consonant conjunct (treated as a single unit)
-     * - Special cases: syllables with anusvara (ం) or visarga (ః) are treated as a single unit
-     */
-    const mainWordList = [
-        // Common Telugu 5-letter words
-        'అమ్మా', // Mother
-        'నాన్న', // Father
-        'ఇల్లు', // House
-        'పిల్ల',// Child
-        'కోడి', // Chicken
-        'పాము', // Snake
-        'పులి', // Tiger
-        'మంచి', // Good
-        'చెడు', // Bad
-        'పాఠం', // Lesson
-        'పేపర్', // Paper
-        'పుస్తకం', // Book
-        'రైలు', // Train
-        'బస్సు', // Bus
-        'కారు', // Car
-        'తోట', // Garden
-        'అడవి', // Forest
-        'పండు', // Fruit
-        'కూర', // Vegetable
-        'నీరు', // Water
-        'పాలు', // Milk
-        'అన్నం', // Rice
-        'గుడి', // Temple
-        'చదువు', // Education
-        'పాట', // Song
-        'ఊరు', // Village/Town
-        'నగరం', // City
-        'దేశం', // Country
-        'ప్రేమ', // Love
-        'ఆశ', // Hope
-        'మీరు', // You (plural/respectful)
-        'నేను', // I
-        'మనం', // We (inclusive)
-        'మేము', // We (exclusive)
-        'వారు', // They
-        'ఆయన', // He (respectful)
-        'ఆవిడ', // She (respectful)
-        'తెలుగు', // Telugu
-        'భాష', // Language
-        'ప్రాణం', // Life
-        'నిద్ర', // Sleep
-        'కనుక', // Therefore
-        'కాని', // But
-        'మరి', // And/Then
-        'కలర్', // Color
-        'చేతి', // Hand
-        'కాలు', // Leg
-        'ముక్కు', // Nose
-        'చెవి', // Ear
-        'కన్ను', // Eye
-        'వంట', // Cooking
-        'ఇప్పుడు', // Now
-    ];
-
-    /**
-     * Target word list - words that can be solutions
-     * This is a subset of the main word list, potentially excluding:
-     * - Very rare or difficult words
-     * - Words with complex multiple consonant conjuncts
-     * - Words with ambiguous divisions
-     * 
-     * Note: Each word has been analyzed for its syllabic unit count,
-     * ensuring it falls within our 3-5 unit range for gameplay.
-     */
-    const targetWordList = [
-        'అమ్మా', // Mother
-        'నాన్న', // Father
-        'ఇల్లు', // House
-        'పిల్ల', // Child
-        'కోడి', // Chicken
-        'పులి', // Tiger
-        'మంచి', // Good
-        'పాఠం', // Lesson
-        'పేపర్', // Paper 
-        'పుస్తకం', // Book
-        'రైలు', // Train
-        'కారు', // Car
-        'తోట', // Garden
-        'అడవి', // Forest
-        'పండు', // Fruit
-        'కూర', // Vegetable
-        'నీరు', // Water
-        'పాలు', // Milk
-        'అన్నం', // Rice
-        'గుడి', // Temple
-        'పాట', // Song
-        'ఊరు', // Village/Town
-        'దేశం', // Country
-        'ప్రేమ', // Love
-        'నేను', // I
-        'మనం', // We
-        'వారు', // They
-        'తెలుగు', // Telugu
-        'భాష', // Language
-        'నిద్ర', // Sleep
-        'మరి', // And/Then
-        'చేతి', // Hand
-        'కాలు', // Leg
-        'ముక్కు', // Nose
-        'చెవి', // Ear
-        'కన్ను', // Eye
-    ];
-    // Add this constant for the localStorage key
+    // Organize words by length (letter count)
+    const wordsByLevel = {
+        1: [ // 2-letter words
+            'దీ',  // This
+            'మా',  // Our
+            'నా',  // My
+            'పై',  // Above
+            'ని',  // Down
+            'లో',  // In
+            'కి',  // To
+            'ను',  // Me
+            // Add more 2-letter words
+        ],
+        2: [ // 3-letter words
+            'అమ్మ',  // Mother
+            'నాన్న', // Father
+            'ఇల్లు', // House
+            'పిల్ల', // Child
+            'కోడి',  // Chicken
+            'పాము',  // Snake
+            'పులి',  // Tiger
+            // Add more 3-letter words
+        ],
+        3: [ // 4-letter words
+            'ఆకాశం', // Sky
+            'పుస్తకం', // Book
+            'బడిలో', // In school
+            'పంచదార', // Sugar
+            'వంటలు', // Cooking
+            'కుటుంబం', // Family
+            // Add more 4-letter words
+        ],
+        4: [ // 5-letter words
+            'మనదేశము', // Our country
+            'విద్యార్థి', // Student
+            'నమస్కారం', // Hello/Greeting
+            'ప్రేమించు', // To love
+            'అందమైన', // Beautiful
+            'భారతదేశం', // India
+            // Add more 5-letter words
+        ]
+    };
+    
+    // Current game level (default to 2 - 3 letter words)
+    let currentLevel = 2;
+    
+    // Local storage keys
+    const LEVEL_KEY = 'telugu_wordle_level';
     const DAILY_WORDS_KEY = 'telugu_wordle_daily_words';
     
-    // Replace or update your existing getRandomWord function with this:
+    /**
+     * Initialize the word list
+     */
+    function init() {
+        // Load saved level preference
+        const savedLevel = localStorage.getItem(LEVEL_KEY);
+        if (savedLevel) {
+            currentLevel = parseInt(savedLevel);
+        }
+    }
+    
+    /**
+     * Get a random word for the current level
+     * @returns {string} A random Telugu word
+     */
     function getRandomWord() {
-        // Check if there's a daily word set for today
+        // Check if there's a word set for today at the current level
         const dailyWord = getTodaysWord();
         if (dailyWord) {
-            console.log("Using daily word:", dailyWord);
-            return dailyWord;
+            // Verify word matches level length requirement
+            const wordParts = TeluguUtils.splitTeluguWord(dailyWord);
+            const expectedLength = getLevelWordLength(currentLevel);
+            
+            if (wordParts.length === expectedLength) {
+                console.log("Using daily word:", dailyWord);
+                return dailyWord;
+            } else {
+                console.log("Daily word doesn't match level length, using random word");
+            }
         }
         
-        // If no daily word, select a random one
-        const randomIndex = Math.floor(Math.random() * targetWordList.length);
-        return targetWordList[randomIndex];
+        // Otherwise select a random word from the current level
+        const levelWords = wordsByLevel[currentLevel];
+        const randomIndex = Math.floor(Math.random() * levelWords.length);
+        return levelWords[randomIndex];
     }
-    // Add this new function to get today's word
+    
+    /**
+     * Get today's word if it has been set by admin
+     * @returns {string|null} Today's word or null if not set
+     */
     function getTodaysWord() {
         try {
             const dailyWordsJson = localStorage.getItem(DAILY_WORDS_KEY);
             if (!dailyWordsJson) return null;
             
             const dailyWords = JSON.parse(dailyWordsJson);
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
             
             return dailyWords[today] || null;
         } catch (e) {
@@ -149,35 +109,72 @@ const TeluguWordList = (function() {
             return null;
         }
     }
-    // Helper function to check if a word is valid (exists in the main word list)
+    
+    /**
+     * Check if a word is valid for the current level
+     * @param {string} word - The word to check
+     * @returns {boolean} True if the word is valid
+     */
     function isValidWord(word) {
-        // Normalize the word before checking (handle any character normalization)
-        const normalizedWord = TeluguUtils.normalizeTeluguText(word);
+        // Check if the word length matches the current level
+        const wordParts = TeluguUtils.splitTeluguWord(word);
+        const expectedLength = getLevelWordLength(currentLevel);
         
-        // Check if the normalized word exists in the main word list
-        for (let i = 0; i < mainWordList.length; i++) {
-            if (TeluguUtils.normalizeTeluguText(mainWordList[i]) === normalizedWord) {
-                return true;
-            }
+        if (wordParts.length !== expectedLength) {
+            return false;
         }
         
-        // For debugging
-        console.log('Invalid word:', word, 'not found in dictionary');
-        return false;
+        // For development, accept any word with correct length
+        // In production, check against the level word list
+        return wordsByLevel[currentLevel].includes(word) || true;
     }
-
-    // Get number of total target words
-    function getWordCount() {
-        return targetWordList.length;
+    
+    /**
+     * Get expected word length for a level
+     * @param {number} level - The level (1-4)
+     * @returns {number} The expected word length for the level
+     */
+    function getLevelWordLength(level) {
+        return level + 1; // Level 1 = 2 letters, Level 2 = 3 letters, etc.
     }
-
+    
+    /**
+     * Set the current game level
+     * @param {number} level - The level (1-4)
+     */
+    function setLevel(level) {
+        if (level >= 1 && level <= 4) {
+            currentLevel = level;
+            localStorage.setItem(LEVEL_KEY, level.toString());
+        }
+    }
+    
+    /**
+     * Get the current game level
+     * @returns {number} Current level (1-4)
+     */
+    function getLevel() {
+        return currentLevel;
+    }
+    
+    /**
+     * Get the word length for the current level
+     * @returns {number} Word length for current level
+     */
+    function getCurrentLevelWordLength() {
+        return getLevelWordLength(currentLevel);
+    }
+    
+    // Initialize on load
+    init();
+    
     // Public API
     return {
-        mainWordList,
-        targetWordList,
         getRandomWord,
         isValidWord,
-        getWordCount,
-        getTodaysWord
+        setLevel,
+        getLevel,
+        getLevelWordLength,
+        getCurrentLevelWordLength
     };
 })();

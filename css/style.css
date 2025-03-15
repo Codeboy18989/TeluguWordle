@@ -445,3 +445,84 @@ main {
 .hidden {
     display: none !important;
 }
+
+/* Level selector styles */
+.level-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.level-btn {
+    background-color: var(--color-key-bg);
+    border: 2px solid var(--color-tile-border);
+    border-radius: 8px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    position: relative;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 70px;
+}
+
+.level-btn span {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+.level-btn:hover {
+    background-color: var(--color-key-bg-hover);
+    transform: translateY(-2px);
+}
+
+.level-btn.active {
+    background-color: var(--color-present);
+    color: white;
+    border-color: var(--color-present);
+}
+
+/* Add responsive design for small screens */
+@media (max-width: 480px) {
+    .level-selector {
+        gap: 5px;
+    }
+    
+    .level-btn {
+        padding: 5px 10px;
+        font-size: 0.9rem;
+        min-width: 60px;
+    }
+}
+
+/* Add smooth transitions for level changes */
+.row {
+    transition: grid-template-columns 0.3s ease;
+}
+
+.tile {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Level transition animation */
+@keyframes levelChange {
+    0% { transform: scale(0.9); opacity: 0.5; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.level-change .tile:not(.hidden-tile) {
+    animation: levelChange 0.5s forwards;
+}
+
+/* Stagger animation for tiles based on column */
+.level-change .tile:nth-child(1) { animation-delay: 0.05s; }
+.level-change .tile:nth-child(2) { animation-delay: 0.1s; }
+.level-change .tile:nth-child(3) { animation-delay: 0.15s; }
+.level-change .tile:nth-child(4) { animation-delay: 0.2s; }
+.level-change .tile:nth-child(5) { animation-delay: 0.25s; }

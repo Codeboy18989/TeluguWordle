@@ -9,7 +9,7 @@ const TeluguWordle = (function() {
         // Number of attempts allowed
         MAX_ATTEMPTS: 6,
         // Min and max word length (in Telugu units, not characters)
-        MIN_WORD_LENGTH: 3,
+        MIN_WORD_LENGTH: 2,
         MAX_WORD_LENGTH: 5,
         // Animation timing
         FLIP_ANIMATION_DURATION: 500, // ms
@@ -28,7 +28,8 @@ const TeluguWordle = (function() {
         revealingRow: false,     // Flag to track revealing animation
         currentRow: 0,           // Current row (attempt)
         gameBoard: null,         // Reference to game board element
-        initialized: false       // Flag to track initialization
+        initialized: false,       // Flag to track initialization
+        level: 2
     };
     
     // Initialize the game
@@ -47,6 +48,15 @@ const TeluguWordle = (function() {
             handleKeyInput
         );
         
+        // Set up level selector
+        setupLevelSelector();
+        
+        // Load the current level from word list
+        state.level = TeluguWordList.getLevel();
+        
+        // Update level UI
+        updateLevelUI();
+
         // Check for saved game state
         const savedState = GameStorage.loadGameState();
         if (savedState) {
@@ -63,7 +73,54 @@ const TeluguWordle = (function() {
         // Set up event listeners for modals
         setupModalListeners();
     }
+    /**
+     * Set up level selector
+     */
+    function setupLevelSelector() {
+        const levelButtons = document.querySelectorAll('.level-btn');
+        
+        levelButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const level = parseInt(button.dataset.level);
+                changeLevel(level);
+            });
+        });
+    }
     
+    /**
+     * Change the game level
+     * @param {number} level - The level to change to (1-4)
+     */
+    function changeLevel(level) {
+        // Only change if level is different
+        if (level === state.level) return;
+        
+        // Update level
+        state.level = level;
+        TeluguWordList.setLevel(level);
+        
+        // Update UI
+        updateLevelUI();
+        
+        // Start a new game
+        startNewGame();
+    }
+    
+    /**
+     * Update level UI
+     */
+    function updateLevelUI() {
+        const levelButtons = document.querySelectorAll('.level-btn');
+        
+        levelButtons.forEach(button => {
+            const buttonLevel = parseInt(button.dataset.level);
+            if (buttonLevel === state.level) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+    }
     /**
      * Create the game board DOM elements
      */
@@ -111,6 +168,7 @@ const TeluguWordle = (function() {
         console.log('New game word:', state.targetWord);
         console.log('Word parts:', state.targetWordParts);
         console.log('Word length:', state.targetWordParts.length);
+        console.log('Current level:', state.level);
         
         // Reset game state
         state.guesses = [];
@@ -171,10 +229,17 @@ const TeluguWordle = (function() {
         state.currentGuess = savedState.currentGuess || '';
         state.gameStatus = savedState.gameStatus;
         state.currentRow = savedState.currentRow;
+        state.level = savedState.level || TeluguWordList.getLevel(); // Restore level
         
         console.log('Restoring game state with word:', state.targetWord);
         console.log('Word parts:', state.targetWordParts);
         
+        // Update level in word list
+        TeluguWordList.setLevel(state.level);
+        
+        // Update level UI
+        updateLevelUI();
+
         // THIS IS THE KEY PART - Adjust tiles for the restored word
         adjustTileVisibility(state.targetWordParts.length);
         
@@ -536,7 +601,7 @@ const TeluguWordle = (function() {
             currentGuess: state.currentGuess,
             gameStatus: state.gameStatus,
             currentRow: state.currentRow,
-            wordLength: state.targetWordParts.length // Save word length for proper UI restoration
+            level: state.level // Save level
         };
         
         GameStorage.saveGameState(gameState);
@@ -736,6 +801,33 @@ const TeluguWordle = (function() {
         const statsModal = document.getElementById('stats-modal');
         statsModal.classList.remove('hidden');
         statsModal.classList.add('show');
+    }
+
+    /**
+     * Change the game level
+     * @param {number} level - The level to change to (1-4)
+     */
+    function changeLevel(level) {
+        // Only change if level is different
+        if (level === state.level) return;
+        
+        // Update level
+        state.level = level;
+        TeluguWordList.setLevel(level);
+        
+        // Update UI
+        updateLevelUI();
+        
+        // Start a new game
+        startNewGame();
+        
+        // Add animation class to game board
+        state.gameBoard.classList.add('level-change');
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            state.gameBoard.classList.remove('level-change');
+        }, 800);
     }
     
     // Public API

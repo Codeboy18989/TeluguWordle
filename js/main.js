@@ -7,6 +7,19 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the game
     TeluguWordle.init();
+    // Initialize level indicator based on saved level
+    updateLevelIndicator(TeluguWordList.getLevel());
+
+    // Helper function to update level indicator
+    function updateLevelIndicator(level) {
+        const levelButtons = document.querySelectorAll('.level-btn');
+        levelButtons.forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.level) === level);
+        });
+        
+        // Update document title to include level
+        document.title = `Level ${level} - తెలుగు Wordle`;
+    }
     
     // Add event listeners for physical keyboard input
     document.addEventListener('keydown', handlePhysicalKeyboard);
