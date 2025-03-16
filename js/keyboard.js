@@ -145,8 +145,8 @@ const TeluguKeyboard = (function() {
     function createKeyboardStructure() {
         // Create the keyboard div
         keyboardElement = document.createElement('div'); // Store reference
-        keyboard.id = 'keyboard';
-        keyboardContainer.appendChild(keyboard);
+        keyboardElement.id = 'keyboard';
+        keyboardContainer.appendChild(keyboardElement);
 
         // Create tabs
         createTabs(keyboardElement);
@@ -199,35 +199,25 @@ const TeluguKeyboard = (function() {
     function addFunctionKeys() {
         // Create a row for function keys
         const functionRow = document.createElement('div');
-        functionRow.className = 'keyboard-row';
+        functionRow.className = 'keyboard-row function-row';
         
-        // Backspace key
-        const backspaceKey = document.createElement('button');
-        backspaceKey.className = 'key wide backspace';
-        backspaceKey.dataset.action = 'backspace';
-        backspaceKey.setAttribute('aria-label', 'Backspace');
-        functionRow.appendChild(backspaceKey);
+        // Define function keys
+        const functionKeys = [
+            { action: 'backspace', label: '⌫' },
+            { action: 'space', label: 'Space' },
+            { action: 'enter', label: 'Enter' }
+        ]
         
-        // Space key
-        const spaceKey = document.createElement('button');
-        spaceKey.className = 'key extra-wide';
-        spaceKey.dataset.char = ' ';
-        spaceKey.textContent = 'Space';
-        functionRow.appendChild(spaceKey);
-        
-        // Enter key
-        const enterKey = document.createElement('button');
-        enterKey.className = 'key wide enter';
-        enterKey.dataset.action = 'enter';
-        enterKey.textContent = 'Enter';
-        functionRow.appendChild(enterKey);
-        
-        // Add function row to all keyboard sections
-        const sections = keyboardElement.querySelectorAll('.keyboard-section');
-        sections.forEach(section => {
-            const clonedRow = functionRow.cloneNode(true);
-            section.appendChild(clonedRow);
+        // Add each function key
+        functionKeys.forEach(funcKey => {
+            const key = document.createElement('button');
+            key.className = 'function-key';
+            key.dataset.action = funcKey.action;
+            key.textContent = funcKey.label;
+            functionRow.appendChild(key);
         });
+        
+        keyboard.appendChild(functionRow);
     }
     
     /**
@@ -235,9 +225,7 @@ const TeluguKeyboard = (function() {
      */
     function createCombinationPanel() {
         combinationPanel = document.createElement('div');
-        combinationPanel.className = 'combination-panel';
-        combinationPanel.style.display = 'none';
-        
+        combinationPanel.className = 'combination-panel hidden';
         keyboardContainer.appendChild(combinationPanel);
     }
 

@@ -390,21 +390,46 @@ const TeluguWordle = (function() {
      * Update the display of the current guess row
      */
     function updateCurrentRow() {
-        const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
-        const currentRow = state.gameBoard.querySelector(`.row[data-row="${state.currentRow}"]`);
-        const tiles = currentRow.querySelectorAll('.tile:not(.hidden-tile)');
+        // Get current row element
+        const currentRowIndex = state.currentRow;
         
-        // Reset all tiles in the current row
-        tiles.forEach(tile => {
-            tile.textContent = '';
-            tile.classList.remove('filled');
-        });
+        // Check if we have a valid row index
+        if (currentRowIndex < 0 || currentRowIndex >= CONFIG.MAX_ATTEMPTS) {
+            console.error('Invalid current row index:', currentRowIndex);
+            return;
+        }
         
-        // Fill in the current guess
-        for (let i = 0; i < currentGuessParts.length; i++) {
-            if (i < tiles.length) {
-                tiles[i].textContent = currentGuessParts[i];
-                tiles[i].classList.add('filled');
+        // Get all row elements
+        const rows = state.gameBoard.querySelectorAll('.row');
+        if (!rows || rows.length === 0) {
+            console.error('No row elements found');
+            return;
+        }
+        
+        const currentRow = rows[currentRowIndex];
+        if (!currentRow) {
+            console.error('Current row element not found');
+            return;
+        }
+        
+        // Get all tiles in the current row
+        const tiles = currentRow.querySelectorAll('.tile');
+        if (!tiles || tiles.length === 0) {
+            console.error('No tile elements found in current row');
+            return;
+        }
+        
+        // Update the tiles with the current guess
+        const currentGuess = state.currentGuess || '';
+        
+        for (let i = 0; i < tiles.length; i++) {
+            const tile = tiles[i];
+            if (i < currentGuess.length) {
+                tile.textContent = currentGuess[i];
+                tile.classList.add('filled');
+            } else {
+                tile.textContent = '';
+                tile.classList.remove('filled');
             }
         }
     }
