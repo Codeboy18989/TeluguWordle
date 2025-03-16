@@ -37,12 +37,14 @@
     right: 0;
     background: #f0f0f0;
     padding: 10px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
     transition: transform 0.3s ease;
     z-index: 1000;
+    transform: translateY(0); /* Start fully visible */
 }
 
 .keyboard-container.minimized {
-    transform: translateY(calc(100% - 40px));
+    transform: translateY(calc(100% - 40px)) !important; /* Force transform when minimized */
 }
 
 .minimize-button {
@@ -51,15 +53,17 @@
     border: 1px solid #ccc;
     border-radius: 4px;
     cursor: pointer;
+    font-weight: bold;
 }
 
 .keyboard-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 5px 10px;
+    padding: 8px 10px;
     background: #e0e0e0;
     border-radius: 8px 8px 0 0;
+    cursor: pointer;
 }
 
 .key {
@@ -201,7 +205,7 @@
 
 /* Ensure space at bottom of page for keyboard */
 body {
-    padding-bottom: 250px;
+    padding-bottom: 300px;
 }
 
 /* Responsive adjustments for keyboard */
@@ -209,7 +213,7 @@ body {
     body {
         padding-bottom: 300px;
     }
-    
+
     .key {
         height: 40px;
         font-size: 1rem;

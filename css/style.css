@@ -118,24 +118,27 @@ main {
     padding: 10px;
     max-width: 350px;
     margin: 0 auto;
+    border: 1px solid #ddd; /* Add border to see game board boundaries */
 }
 
 .row {
     display: flex;
     gap: 5px;
     justify-content: center;
+    margin-bottom: 5px;
 }
 
 .tile {
     width: 60px;
     height: 60px;
     border: 2px solid #d3d6da;
-    display: flex;
+    display: flex !important;
     justify-content: center;
     align-items: center;
     font-size: 2rem;
     font-weight: bold;
     text-transform: uppercase;
+    background-color: white; /* Ensure visible background */
 }
 
 .tile.hidden-tile {

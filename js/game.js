@@ -104,11 +104,16 @@ const TeluguWordle = (function() {
      */
     function createGameBoard() {
         const board = document.getElementById('game-board');
+        if (!board) {
+            console.error('Game board element not found!');
+            return;
+        }
         board.innerHTML = ''; // Clear existing board
         
         // Get the current level's word length
         const currentBoxCount = TeluguWordList.getLevelWordLength(TeluguWordList.getLevel());
-        
+        console.log('Creating game board with box count:', currentBoxCount);
+
         // Create rows
         for (let i = 0; i < CONFIG.MAX_ATTEMPTS; i++) {
             const row = document.createElement('div');
@@ -118,6 +123,7 @@ const TeluguWordle = (function() {
             for (let j = 0; j < currentBoxCount; j++) {
                 const tile = document.createElement('div');
                 tile.className = 'tile';
+                tile.style.display = 'flex'; // Explicitly set display
                 row.appendChild(tile);
             }
             board.appendChild(row);

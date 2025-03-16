@@ -51,6 +51,11 @@ const TeluguKeyboard = (function() {
         keyboardContainer = container; // Store container reference
         keyHandler = onKeyPress;
 
+        console.log('Initializing keyboard with container:', container);
+
+        // First clear any existing content
+        container.innerHTML = '';
+
         // Create keyboard header
         createKeyboardHeader();
         
@@ -68,34 +73,50 @@ const TeluguKeyboard = (function() {
         
         // Show initial tab
         showTab(currentTab);
+    }
 
-        // Setup minimize button if it exists
+    function toggleKeyboard() {
+        console.log('Toggle keyboard called');
+        if (!keyboardContainer) {
+            console.error('Keyboard container not found');
+            return;
+        }
+        
+        isMinimized = !isMinimized;
+        console.log('Keyboard minimized:', isMinimized);
+        
+        keyboardContainer.classList.toggle('minimized', isMinimized);
+        
         const minimizeBtn = document.getElementById('minimize-keyboard');
         if (minimizeBtn) {
-            minimizeBtn.addEventListener('click', toggleKeyboard);
+            minimizeBtn.textContent = isMinimized ? '▲' : '▼';
         }
+        
+        // Save preference
+        localStorage.setItem('keyboardMinimized', isMinimized);
     }
 
     function createKeyboardHeader() {
-        if (!document.querySelector('.keyboard-header')) {
-            const header = document.createElement('div');
-            header.className = 'keyboard-header';
-            
-            const title = document.createElement('span');
-            title.textContent = 'తెలుగు Keyboard';
-            
-            const minimizeBtn = document.createElement('button');
-            minimizeBtn.id = 'minimize-keyboard';
-            minimizeBtn.className = 'minimize-button';
-            minimizeBtn.textContent = '▼';
-            
-            header.appendChild(title);
-            header.appendChild(minimizeBtn);
-            keyboardContainer.insertBefore(header, keyboardContainer.firstChild);
-            
-            // Setup minimize button functionality
-            minimizeBtn.addEventListener('click', toggleKeyboard);
-        }
+        console.log('Creating keyboard header');
+    
+        const header = document.createElement('div');
+        header.className = 'keyboard-header';
+        
+        const title = document.createElement('span');
+        title.textContent = 'తెలుగు Keyboard';
+        
+        const minimizeBtn = document.createElement('button');
+        minimizeBtn.id = 'minimize-keyboard';
+        minimizeBtn.className = 'minimize-button';
+        minimizeBtn.textContent = '▼';
+        
+        header.appendChild(title);
+        header.appendChild(minimizeBtn);
+        keyboardContainer.appendChild(header);
+        
+        // Setup minimize button functionality
+        minimizeBtn.addEventListener('click', toggleKeyboard);
+        console.log('Minimize button event listener attached');
     }
 
     function createKeyboardStructure() {
@@ -148,17 +169,7 @@ const TeluguKeyboard = (function() {
     // Show initial tab
     showTab(currentTab);
 
-    function toggleKeyboard() {
-        const container = document.getElementById('keyboard-container');
-        const minimizeBtn = document.getElementById('minimize-keyboard');
-        
-        isMinimized = !isMinimized;
-        container.classList.toggle('minimized');
-        minimizeBtn.textContent = isMinimized ? '▲' : '▼';
-        
-        // Save preference
-        localStorage.setItem('keyboardMinimized', isMinimized);
-    }
+    
     
     
     /**
