@@ -11,6 +11,7 @@ const TeluguKeyboard = (function() {
     let compositionDisplay = null;
     let currentComposition = '';
     let currentTab = 'consonants';
+    let combinationPanel = null;
 
     // Keyboard sections and layouts
     const keyboardLayout = {
@@ -67,6 +68,12 @@ const TeluguKeyboard = (function() {
         
         // Show initial tab
         showTab(currentTab);
+
+        // Setup minimize button if it exists
+        const minimizeBtn = document.getElementById('minimize-keyboard');
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', toggleKeyboard);
+        }
     }
 
     function createKeyboardHeader() {
