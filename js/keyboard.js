@@ -12,6 +12,7 @@ const TeluguKeyboard = (function() {
     let currentComposition = '';
     let currentTab = 'consonants';
     let combinationPanel = null;
+    let keyboardElement = null;
 
     // Keyboard sections and layouts
     const keyboardLayout = {
@@ -75,6 +76,28 @@ const TeluguKeyboard = (function() {
         showTab(currentTab);
     }
 
+    function createTabs(keyboard) {
+        const tabsContainer = document.createElement('div');
+        tabsContainer.className = 'keyboard-tabs';
+        
+        // Add tabs
+        const tabs = {
+            'consonants': 'హల్లులు (Consonants)',
+            'vowels': 'అచ్చులు (Vowels)',
+            'vowelDiacritics': 'గుణింతాలు (Vowel Signs)'
+        };
+        
+        for (const [tabId, tabLabel] of Object.entries(tabs)) {
+            const tab = document.createElement('button');
+            tab.className = `keyboard-tab ${tabId === currentTab ? 'active' : ''}`;
+            tab.dataset.tab = tabId;
+            tab.textContent = tabLabel;
+            tabsContainer.appendChild(tab);
+        }
+        
+        keyboard.appendChild(tabsContainer);
+    }
+
     function toggleKeyboard() {
         console.log('Toggle keyboard called');
         if (!keyboardContainer) {
@@ -120,38 +143,54 @@ const TeluguKeyboard = (function() {
     }
 
     function createKeyboardStructure() {
-        const keyboard = document.createElement('div');
+        // Create the keyboard div
+        keyboardElement = document.createElement('div'); // Store reference
         keyboard.id = 'keyboard';
         keyboardContainer.appendChild(keyboard);
 
         // Create tabs
-        createTabs(keyboard);
+        createTabs(keyboardElement);
         
-        // Create main keyboard area
-        const keyboardArea = document.createElement('div');
-        keyboardArea.className = 'keyboard-area';
-        keyboard.appendChild(keyboardArea);
+        // Create sections for each keyboard layout
+        for (const [sectionId, layout] of Object.entries(keyboardLayout)) {
+            const section = document.createElement('div');
+            section.className = `keyboard-section ${sectionId === currentTab ? 'active' : ''}`;
+            section.dataset.section = sectionId;
+            
+            // Create rows and keys
+            layout.forEach(row => {
+                const keyboardRow = document.createElement('div');
+                keyboardRow.className = 'keyboard-row';
+                
+                row.forEach(char => {
+                    const key = document.createElement('button');
+                    key.className = 'key';
+                    key.dataset.char = char;
+                    key.textContent = char;
+                    keyboardRow.appendChild(key);
+                });
+                
+                section.appendChild(keyboardRow);
+            });
+            
+            keyboardElement.appendChild(section);
+        }
         
+        // Add function keys
+        addFunctionKeys(keyboardElement);
+
         // Create combination panel
         createCombinationPanel();
     }
     
-    // Create keyboard header and minimize button if they don't exist
-    if (!document.querySelector('.keyboard-header')) {
-        const header = document.createElement('div');
-        header.className = 'keyboard-header';
+    // Fix the resetKeyStatuses function to not rely on keyboardElement
+    function resetKeyStatuses() {
+        if (!keyboardContainer) return;
         
-        const title = document.createElement('span');
-        title.textContent = 'తెలుగు Keyboard';
-        
-        const minimizeBtn = document.createElement('button');
-        minimizeBtn.id = 'minimize-keyboard';
-        minimizeBtn.className = 'minimize-button';
-        minimizeBtn.textContent = '▼';
-        
-        header.appendChild(title);
-        header.appendChild(minimizeBtn);
-        container.insertBefore(header, container.firstChild);
+        const keys = keyboardContainer.querySelectorAll('.key');
+        keys.forEach(key => {
+            key.classList.remove('correct', 'present', 'absent');
+        });
     }
 
     /**
