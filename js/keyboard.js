@@ -43,80 +43,41 @@ const TeluguKeyboard = (function() {
             ['్'] // Virama (Pollu) - removes inherent vowel
         ]
     };
-    /**
-     * Initialize the keyboard
-     * @param {HTMLElement} container - The container element for the keyboard
-     * @param {Function} onKeyPress - Callback function for key press events
-     */
+    
+    // Initialize the keyboard
     function init(container, onKeyPress) {
         keyboardContainer = container; // Store container reference
         keyHandler = onKeyPress;
 
         console.log('Initializing keyboard with container:', container);
 
-        // First clear any existing content
-        container.innerHTML = '';
-
-        // Create keyboard header
-        createKeyboardHeader();
-        
-        // Create keyboard structure
-        createKeyboardStructure();
-        
-        // Setup composition area
-        setupCompositionArea();
-        
-        // Setup event listeners
-        setupEventListeners();
-        
-        // Show keyboard by default
-        container.classList.remove('minimized');
-        
-        // Show initial tab
-        showTab(currentTab);
-    }
-
-    function createTabs(keyboard) {
-        const tabsContainer = document.createElement('div');
-        tabsContainer.className = 'keyboard-tabs';
-        
-        // Add tabs
-        const tabs = {
-            'consonants': 'హల్లులు (Consonants)',
-            'vowels': 'అచ్చులు (Vowels)',
-            'vowelDiacritics': 'గుణింతాలు (Vowel Signs)'
-        };
-        
-        for (const [tabId, tabLabel] of Object.entries(tabs)) {
-            const tab = document.createElement('button');
-            tab.className = `keyboard-tab ${tabId === currentTab ? 'active' : ''}`;
-            tab.dataset.tab = tabId;
-            tab.textContent = tabLabel;
-            tabsContainer.appendChild(tab);
+        try {
+            // First clear any existing content
+            container.innerHTML = '';
+            
+            // Create keyboard header
+            createKeyboardHeader();
+            
+            // Create keyboard structure
+            createKeyboardStructure();
+            
+            // Setup composition area
+            setupCompositionArea();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Show keyboard by default
+            container.classList.remove('minimized');
+            
+            // Show initial tab
+            showTab(currentTab);
+            
+            return true;
+        } catch (e) {
+            console.error("Error in keyboard init:", e);
+            return false;
         }
-        
-        keyboard.appendChild(tabsContainer);
-    }
-
-    function toggleKeyboard() {
-        console.log('Toggle keyboard called');
-        if (!keyboardContainer) {
-            console.error('Keyboard container not found');
-            return;
-        }
-        
-        isMinimized = !isMinimized;
-        console.log('Keyboard minimized:', isMinimized);
-        
-        keyboardContainer.classList.toggle('minimized', isMinimized);
-        
-        const minimizeBtn = document.getElementById('minimize-keyboard');
-        if (minimizeBtn) {
-            minimizeBtn.textContent = isMinimized ? '▲' : '▼';
-        }
-        
-        // Save preference
-        localStorage.setItem('keyboardMinimized', isMinimized);
     }
 
     function createKeyboardHeader() {
@@ -182,21 +143,31 @@ const TeluguKeyboard = (function() {
         // Create combination panel
         createCombinationPanel();
     }
-    
-    // Fix the resetKeyStatuses function to not rely on keyboardElement
-    function resetKeyStatuses() {
-        if (!keyboardContainer) return;
+
+    function createTabs(keyboard) {
+        const tabsContainer = document.createElement('div');
+        tabsContainer.className = 'keyboard-tabs';
         
-        const keys = keyboardContainer.querySelectorAll('.key');
-        keys.forEach(key => {
-            key.classList.remove('correct', 'present', 'absent');
-        });
+        // Add tabs
+        const tabs = {
+            'consonants': 'హల్లులు (Consonants)',
+            'vowels': 'అచ్చులు (Vowels)',
+            'vowelDiacritics': 'గుణింతాలు (Vowel Signs)'
+        };
+        
+        for (const [tabId, tabLabel] of Object.entries(tabs)) {
+            const tab = document.createElement('button');
+            tab.className = `keyboard-tab ${tabId === currentTab ? 'active' : ''}`;
+            tab.dataset.tab = tabId;
+            tab.textContent = tabLabel;
+            tabsContainer.appendChild(tab);
+        }
+        
+        keyboard.appendChild(tabsContainer);
     }
 
-    /**
-     * Add function keys to the keyboard
-     */
-    function addFunctionKeys() {
+    // Add function keys to the keyboard
+    function addFunctionKeys(keyboard) {
         // Create a row for function keys
         const functionRow = document.createElement('div');
         functionRow.className = 'keyboard-row function-row';
@@ -219,31 +190,53 @@ const TeluguKeyboard = (function() {
         
         keyboard.appendChild(functionRow);
     }
-    
-    /**
-     * Create the combination panel for consonant-vowel combinations
-     */
+
+    // Create the combination panel for consonant-vowel combinations
     function createCombinationPanel() {
         combinationPanel = document.createElement('div');
         combinationPanel.className = 'combination-panel hidden';
         keyboardContainer.appendChild(combinationPanel);
     }
 
-    // Restore keyboard state on page load
-    function restoreKeyboardState() {
-        const savedState = localStorage.getItem('keyboardMinimized');
-        if (savedState !== null) {
-            isMinimized = savedState === 'true';
-            const container = document.getElementById('keyboard-container');
-            const minimizeBtn = document.getElementById('minimize-keyboard');
-            
-            if (isMinimized) {
-                container.classList.add('minimized');
-                minimizeBtn.textContent = '▲';
-            }
+    // Add this new function
+    function setupCompositionArea() {
+        console.log('Setting up composition area');
+        compositionDisplay = document.querySelector('.composition-display');
+        
+        if (!compositionDisplay) {
+            console.error('Composition display element not found!');
+            return;
+        }
+
+        console.log('Composition display found:', compositionDisplay);
+
+        // Clear button
+        const clearButton = document.querySelector('.composition-clear');
+        if (clearButton) {
+            clearButton.addEventListener('click', () => {
+                console.log('Clearing composition');
+                compositionDisplay.textContent = '';
+                currentComposition = '';
+            });
+        }
+        
+        // Submit button
+        const submitButton = document.querySelector('.composition-submit');
+        if (submitButton) {
+            submitButton.addEventListener('click', () => {
+                console.log('Submitting composition:', currentComposition);
+                if (currentComposition) {
+                    // Submit the composed text to the game
+                    keyHandler('submit-composition', currentComposition);
+                    
+                    // Clear the composition area
+                    compositionDisplay.textContent = '';
+                    currentComposition = '';
+                }
+            });
         }
     }
-    
+
     /**
      * Set up event listeners for the keyboard
      */
@@ -304,7 +297,7 @@ const TeluguKeyboard = (function() {
         });
 
     }
-    
+
     /**
      * Show a specific keyboard tab
      * @param {string} tabId - The ID of the tab to show
@@ -328,164 +321,28 @@ const TeluguKeyboard = (function() {
         // Hide combination panel when switching tabs
         combinationPanel.style.display = 'none';
     }
-    
-    /**
-     * Show the combination panel for a consonant
-     * @param {string} consonant - The consonant to show combinations for
-     * @param {HTMLElement} targetElement - The element that triggered the panel
-     */
-    function showCombinationPanel(consonant, targetElement) {
-        // Clear previous content
-        combinationPanel.innerHTML = '';
-        
-        // Add the base consonant
-        addCombinationKey(consonant);
-        
-        // Add virama form (consonant without vowel)
-        addCombinationKey(consonant + '్');
-        
-        // Add all vowel diacritic combinations
-        for (const diacriticRow of keyboardLayout.vowelDiacritics) {
-            for (const diacritic of diacriticRow) {
-                if (diacritic !== '్') { // Skip virama as we already added it
-                    addCombinationKey(consonant + diacritic);
-                }
-            }
-        }
-        
-        // Position panel near the clicked consonant
-        positionCombinationPanel(targetElement);
-        
-        // Show the panel
-        combinationPanel.style.display = 'grid';
-        
-        // Store reference to active element
-        activeElement = targetElement;
-    }
-    
-    /**
-     * Add a key to the combination panel
-     * @param {string} combo - The character combination to add
-     */
-    function addCombinationKey(combo) {
-        const key = document.createElement('button');
-        key.className = 'combo-key';
-        key.textContent = combo;
-        key.dataset.char = combo;
-        
-        key.addEventListener('click', () => {
-            console.log('Combo key clicked:', combo);
-            handleKeyPress(combo);
-            combinationPanel.style.display = 'none';
-        });
-        
-        combinationPanel.appendChild(key);
-    }
-    
-    /**
-     * Position the combination panel relative to the target element
-     * @param {HTMLElement} targetElement - The reference element
-     */
-    function positionCombinationPanel(targetElement) {
-        const rect = targetElement.getBoundingClientRect();
-        
-        // Position panel above the key, considering that keyboard is now fixed
-        combinationPanel.style.position = 'absolute';
-        combinationPanel.style.left = rect.left + 'px';
-        combinationPanel.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
-        
-        // Adjust panel position to ensure it stays within viewport
-        setTimeout(() => {
-            const panelRect = combinationPanel.getBoundingClientRect();
-            
-            // Ensure panel doesn't go beyond right edge
-            if (panelRect.right > window.innerWidth) {
-                const overflow = panelRect.right - window.innerWidth;
-                combinationPanel.style.left = (rect.left - overflow - 10) + 'px';
-            }
-            
-            // Ensure panel doesn't go beyond left edge
-            if (panelRect.left < 0) {
-                combinationPanel.style.left = '10px';
-            }
-        }, 0);
-    }
-    
-    /**
-     * Update key status based on game feedback
-     * @param {string} char - The character to update
-     * @param {string} status - The status ('correct', 'present', 'absent')
-     */
-    function updateKeyStatus(char, status) {
-        // Find all keys with this character
-        const keys = keyboardElement.querySelectorAll(`.key[data-char="${char}"]`);
-        
-        keys.forEach(key => {
-            // Remove existing status classes
-            key.classList.remove('correct', 'present', 'absent');
-            
-            // Don't downgrade statuses (e.g., from 'correct' to 'present')
-            if (key.classList.contains('correct')) {
-                return;
-            }
-            if (key.classList.contains('present') && status === 'absent') {
-                return;
-            }
-            
-            // Add new status class
-            key.classList.add(status);
-        });
-    }
-    
-    /**
-     * Reset all key statuses to default
-     */
-    function resetKeyStatuses() {
-        const keys = keyboardElement.querySelectorAll('.key');
-        keys.forEach(key => {
-            key.classList.remove('correct', 'present', 'absent');
-        });
-    }
 
-    // Add this new function
-    function setupCompositionArea() {
-        console.log('Setting up composition area');
-        compositionDisplay = document.querySelector('.composition-display');
-        
-        if (!compositionDisplay) {
-            console.error('Composition display element not found!');
+    function toggleKeyboard() {
+        console.log('Toggle keyboard called');
+        if (!keyboardContainer) {
+            console.error('Keyboard container not found');
             return;
         }
-
-        console.log('Composition display found:', compositionDisplay);
-
-        // Clear button
-        const clearButton = document.querySelector('.composition-clear');
-        if (clearButton) {
-            clearButton.addEventListener('click', () => {
-                console.log('Clearing composition');
-                compositionDisplay.textContent = '';
-                currentComposition = '';
-            });
+        
+        isMinimized = !isMinimized;
+        console.log('Keyboard minimized:', isMinimized);
+        
+        keyboardContainer.classList.toggle('minimized', isMinimized);
+        
+        const minimizeBtn = document.getElementById('minimize-keyboard');
+        if (minimizeBtn) {
+            minimizeBtn.textContent = isMinimized ? '▲' : '▼';
         }
         
-        // Submit button
-        const submitButton = document.querySelector('.composition-submit');
-        if (submitButton) {
-            submitButton.addEventListener('click', () => {
-                console.log('Submitting composition:', currentComposition);
-                if (currentComposition) {
-                    // Submit the composed text to the game
-                    keyHandler('submit-composition', currentComposition);
-                    
-                    // Clear the composition area
-                    compositionDisplay.textContent = '';
-                    currentComposition = '';
-                }
-            });
-        }
+        // Save preference
+        localStorage.setItem('keyboardMinimized', isMinimized);
     }
-    
+
     // Modify the key press handling
     function handleKeyPress(key) {
         console.log('Handling key press:', key);
@@ -517,6 +374,60 @@ const TeluguKeyboard = (function() {
             compositionDisplay.textContent = currentComposition;
         }
     }
+
+    /**
+     * Update key status based on game feedback
+     * @param {string} char - The character to update
+     * @param {string} status - The status ('correct', 'present', 'absent')
+     */
+    function updateKeyStatus(char, status) {
+        // Find all keys with this character
+        const keys = keyboardElement.querySelectorAll(`.key[data-char="${char}"]`);
+        
+        keys.forEach(key => {
+            // Remove existing status classes
+            key.classList.remove('correct', 'present', 'absent');
+            
+            // Don't downgrade statuses (e.g., from 'correct' to 'present')
+            if (key.classList.contains('correct')) {
+                return;
+            }
+            if (key.classList.contains('present') && status === 'absent') {
+                return;
+            }
+            
+            // Add new status class
+            key.classList.add(status);
+        });
+    }
+    
+    // Fix the resetKeyStatuses function to not rely on keyboardElement
+    function resetKeyStatuses() {
+        if (!keyboardContainer) return;
+        
+        const keys = keyboardContainer.querySelectorAll('.key');
+        keys.forEach(key => {
+            key.classList.remove('correct', 'present', 'absent');
+        });
+    }
+    
+
+    // Restore keyboard state on page load
+    function restoreKeyboardState() {
+        const savedState = localStorage.getItem('keyboardMinimized');
+        if (savedState !== null) {
+            isMinimized = savedState === 'true';
+            const container = document.getElementById('keyboard-container');
+            const minimizeBtn = document.getElementById('minimize-keyboard');
+            
+            if (isMinimized) {
+                container.classList.add('minimized');
+                minimizeBtn.textContent = '▲';
+            }
+        }
+    }
+    
+    
     // Public API
     return {
         init,
