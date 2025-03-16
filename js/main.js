@@ -18,19 +18,33 @@ if ('serviceWorker' in navigator) {
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM content loaded');
-    
+    // Make sure TeluguWordle is initialized first
+    if (typeof TeluguWordle === 'undefined') {
+        console.error('TeluguWordle not defined!');
+        return;
+    }
     // Check if elements exist
     console.log('Game board element:', document.getElementById('game-board'));
     console.log('Keyboard container:', document.getElementById('keyboard-container'));
     
+    // Initialize the keyboard
+    if (typeof TeluguKeyboard === 'undefined') {
+        console.error('TeluguKeyboard not defined!');
+        return;
+    }
+
     // First initialize the keyboard
     const keyboardContainer = document.getElementById('keyboard-container');
     if (!keyboardContainer) {
         console.error('ERROR: Keyboard container not found!');
     } else {
         console.log('Initializing keyboard...');
-        TeluguKeyboard.init(keyboardContainer, TeluguWordle.handleKeyInput);
-        TeluguKeyboard.restoreKeyboardState();
+        try {
+            TeluguKeyboard.init(keyboardContainer, TeluguWordle.handleKeyInput);
+            TeluguKeyboard.restoreKeyboardState();
+        } catch (e) {
+            console.error('Error initializing keyboard:', e);
+        }
     }
 
     // Initialize the game

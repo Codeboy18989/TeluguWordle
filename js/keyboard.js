@@ -154,24 +154,6 @@ const TeluguKeyboard = (function() {
         container.insertBefore(header, container.firstChild);
     }
 
-    // Setup minimize button functionality
-    const minimizeBtn = document.getElementById('minimize-keyboard');
-    minimizeBtn.addEventListener('click', toggleKeyboard);
-
-    // Create keyboard layout - using the correct function name
-    createKeyboardStructure();
-    setupCompositionArea();
-    setupEventListeners();
-
-    // Show keyboard by default
-    container.classList.remove('minimized');
-        
-    // Show initial tab
-    showTab(currentTab);
-
-    
-    
-    
     /**
      * Add function keys to the keyboard
      */
@@ -515,6 +497,7 @@ const TeluguKeyboard = (function() {
         restoreKeyboardState,
         updateKeyStatus,
         resetKeyStatuses,
-        showTab
+        showTab,
+        handleKeyPress
     };
 })();
