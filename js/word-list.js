@@ -56,25 +56,28 @@ const TeluguWordList = (function() {
      * @returns {string} A random Telugu word
      */
     function getRandomWord() {
-        // Check if there's a word set for today at the current level
-        const dailyWord = getTodaysWord();
-        if (dailyWord) {
-            // Verify word matches level length requirement
-            const wordParts = TeluguUtils.splitTeluguWord(dailyWord);
-            const expectedLength = getLevelWordLength(currentLevel);
+        // Check if there are words for the current level
+        if (!wordsByLevel[currentLevel] || wordsByLevel[currentLevel].length === 0) {
+            console.error('No words found for level', currentLevel);
+            // Fallback to any level that has words
+            for (const level in wordsByLevel) {
+                if (wordsByLevel[level] && wordsByLevel[level].length > 0) {
+                    currentLevel = parseInt(level);
+                    console.log('Falling back to level', currentLevel);
+                    break;
+                }
+            }
             
-            if (wordParts.length === expectedLength) {
-                console.log("Using daily word:", dailyWord);
-                return dailyWord;
-            } else {
-                console.log("Daily word doesn't match level length, using random word");
+            // If still no words found, return a default word
+            if (!wordsByLevel[currentLevel] || wordsByLevel[currentLevel].length === 0) {
+                console.error('No words found in any level!');
+                return "అమ్మ"; // Default fallback word
             }
         }
         
-        // Otherwise select a random word from the current level
-        const levelWords = wordsByLevel[currentLevel];
-        const randomIndex = Math.floor(Math.random() * levelWords.length);
-        return levelWords[randomIndex];
+        // Get a random word from the current level
+        const randomIndex = Math.floor(Math.random() * wordsByLevel[currentLevel].length);
+        return wordsByLevel[currentLevel][randomIndex];
     }
     
     /**

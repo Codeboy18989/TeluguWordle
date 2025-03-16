@@ -314,31 +314,60 @@ const TeluguWordle = (function() {
      * Add composed Telugu text to the current guess
      * @param {string} text - The composed Telugu text
      */
-    function addComposedText(text) {
-        // Split the text into proper Telugu units
-        const textUnits = TeluguUtils.splitTeluguWord(text);
+    function addComposedText(composedtext) {
+        console.log('Adding composed text:', composedText);
+    
+        // Get current word length for the selected level
+        const currentLevelBoxCount = TeluguWordList.getLevelWordLength(TeluguWordList.getLevel());
         
-        // Get current guess parts
-        const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
-        
-        // Check if we can add all the new units
-        const boxCount = TeluguWordList.getLevelWordLength(state.level);
-        if (currentGuessParts.length + textUnits.length > boxCount) {
-            // Too many units, show notification
-            showNotification(`Word can only be ${boxCount} units long`);
+        // Check if there's space for this composed text
+        if (composedText.length > currentLevelBoxCount) {
+            console.warn('Composed text too long for current level');
+            showNotification('Text too long for this level');
+            shakeCurrentRow();
             return;
         }
         
-        // Add the composed text to current guess
-        state.currentGuess += text;
+        // Set the current guess directly to the composed text
+        state.currentGuess = composedText;
         
-        // Update the UI
-        updateCurrentRow();
+        // Update the display to show the composed text
+        updateCurrentRowWithComposedText(composedText);
         
-        // Save game state
-        saveGameState();
+        // Automatically submit the guess
+        submitGuess();
     }
     
+    // New function to update row with composed text
+    function updateCurrentRowWithComposedText(composedText) {
+        const currentRowIndex = state.currentRow;
+        const rows = state.gameBoard.querySelectorAll('.row');
+        
+        if (currentRowIndex < 0 || currentRowIndex >= rows.length) {
+            console.error('Invalid row index');
+            return;
+        }
+        
+        const currentRow = rows[currentRowIndex];
+        if (!currentRow) {
+            console.error('Current row element not found');
+            return;
+        }
+        
+        const tiles = currentRow.querySelectorAll('.tile');
+        
+        // Display each Telugu character as a single unit
+        for (let i = 0; i < tiles.length; i++) {
+            if (i < composedText.length) {
+                tiles[i].textContent = composedText[i];
+                tiles[i].classList.add('filled');
+            } else {
+                tiles[i].textContent = '';
+                tiles[i].classList.remove('filled');
+            }
+        }
+    }
+
     /**
      * Add a letter to the current guess
      * @param {string} letter - The letter to add
@@ -438,40 +467,53 @@ const TeluguWordle = (function() {
      * Submit the current guess
      */
     function submitGuess() {
-        const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
-        const boxCount = TeluguWordList.getLevelWordLength(state.level);
-        
-        console.log('Submitting guess:', state.currentGuess);
-        console.log('Guess parts:', currentGuessParts);
-        console.log('Required box count:', boxCount);
-        
-    // Check if we have a complete word matching the required box count
-     if (currentGuessParts.length !== boxCount) {
-            showNotification(`${boxCount} అక్షరాల పదం ఉండాలి (Word must be ${boxCount} units)`);
+        // Validate current guess
+        if (!state.currentGuess) {
+            showNotification('Please enter a word');
             shakeCurrentRow();
             return;
         }
         
-        // Check if it's a valid Telugu word
+        const currentLevelBoxCount = TeluguWordList.getLevelWordLength(TeluguWordList.getLevel());
+        
+        // Check if the guess has the correct number of characters
+        if (state.currentGuess.length !== currentLevelBoxCount) {
+            showNotification(`Word must be ${currentLevelBoxCount} characters`);
+            shakeCurrentRow();
+            return;
+        }
+        
+        // Check if the word is valid
         if (!TeluguWordList.isValidWord(state.currentGuess)) {
-            console.log('Word validation failed:', state.currentGuess);
-            showNotification('చెల్లుబాటు అయ్యే తెలుగు పదం కాదు (Not a valid Telugu word)');
+            showNotification('Not in word list');
             shakeCurrentRow();
             return;
         }
         
-        // Add to guesses
+        // Add the guess to the list (use the full composed text)
         state.guesses.push(state.currentGuess);
         
         // Evaluate the guess
         const evaluation = evaluateGuess(state.currentGuess);
+        state.evaluations.push(evaluation);
         
-        // Start the reveal animation
-        state.revealingRow = true;
-        revealRowAnimation(evaluation);
+        // Update the UI based on evaluation
+        updateRowWithEvaluation(state.currentRow, state.currentGuess, evaluation);
         
-        // Log success
-        console.log('Guess submitted successfully:', state.currentGuess);
+        // Check if the game is won
+        if (evaluation.every(e => e === 'correct')) {
+            gameWon();
+        } else if (state.currentRow >= CONFIG.MAX_ATTEMPTS - 1) {
+            gameLost();
+        } else {
+            // Move to the next row
+            state.currentRow++;
+            state.currentGuess = '';
+            updateCurrentRow();
+        }
+        
+        // Save the game state
+        saveGameState();
     }
     
     /**
@@ -664,12 +706,29 @@ const TeluguWordle = (function() {
      * Shake the current row (for invalid input)
      */
     function shakeCurrentRow() {
-        const currentRow = state.gameBoard.querySelector(`.row[data-row="${state.currentRow}"]`);
+        const currentRowIndex = state.currentRow;
+        const rows = state.gameBoard.querySelectorAll('.row');
+        
+        // Check if row exists
+        if (currentRowIndex < 0 || currentRowIndex >= rows.length) {
+            console.error('Invalid row index in shakeCurrentRow:', currentRowIndex);
+            return;
+        }
+        
+        const currentRow = rows[currentRowIndex];
+        if (!currentRow) {
+            console.error('Current row element not found in shakeCurrentRow');
+            return;
+        }
+        
+        // Apply shake animation
         currentRow.classList.add('shake');
         
-        // Remove class after animation completes
+        // Remove animation class after it completes
         setTimeout(() => {
-            currentRow.classList.remove('shake');
+            if (currentRow) {
+                currentRow.classList.remove('shake');
+            }
         }, 500);
     }
     
