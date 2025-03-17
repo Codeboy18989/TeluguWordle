@@ -126,10 +126,10 @@ const TeluguWordList = (function() {
     function getLevelWordLength(level) {
         // Adjust this mapping based on your actual Telugu word structure
         switch(level) {
-            case 1: return 1; // Level 1: always 3 boxes
-            case 2: return 2; // Level 2: always 4 boxes
-            case 3: return 3; // Level 3: always 5 boxes
-            default: return 1; // Default to level 1
+            case 1: return 3; // Level 1: always 3 boxes
+            case 2: return 4; // Level 2: always 4 boxes
+            case 3: return 5; // Level 3: always 5 boxes
+            default: return 3; // Default to level 1
         }
     }
     
