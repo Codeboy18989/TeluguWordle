@@ -315,13 +315,13 @@ const TeluguWordle = (function() {
      * @param {string} text - The composed Telugu text
      */
     function addComposedText(composedtext) {
-        console.log('Adding composed text:', composedText);
+        console.log('Adding composed text:', composedtext);
     
         // Get current word length for the selected level
         const currentLevelBoxCount = TeluguWordList.getLevelWordLength(TeluguWordList.getLevel());
         
         // Check if there's space for this composed text
-        if (composedText.length > currentLevelBoxCount) {
+        if (composedtext.length > currentLevelBoxCount) {
             console.warn('Composed text too long for current level');
             showNotification('Text too long for this level');
             shakeCurrentRow();
@@ -329,10 +329,10 @@ const TeluguWordle = (function() {
         }
         
         // Set the current guess directly to the composed text
-        state.currentGuess = composedText;
+        state.currentGuess = composedtext;
         
         // Update the display to show the composed text
-        updateCurrentRowWithComposedText(composedText);
+        updateCurrentRowWithComposedText(composedtext);
         
         // Automatically submit the guess
         submitGuess();
@@ -359,7 +359,7 @@ const TeluguWordle = (function() {
         // Display each Telugu character as a single unit
         for (let i = 0; i < tiles.length; i++) {
             if (i < composedtext.length) {
-                tiles[i].textContent = composedText[i];
+                tiles[i].textContent = composedtext[i];
                 tiles[i].classList.add('filled');
             } else {
                 tiles[i].textContent = '';
