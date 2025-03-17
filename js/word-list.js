@@ -6,8 +6,8 @@
 const TeluguWordList = (function() {
     // Organize words by length (letter count)
     const wordsByLevel = {
-        2: [ // 3-letter words
-            'ఒకటి', //One
+        1: [ // 3-letter words
+            'ఒకటి' //One
             /*'నాలుగు', //Four
             'విద్యార్థి', // Student
             'వంటలు', // Cooking
@@ -16,25 +16,25 @@ const TeluguWordList = (function() {
             'ప్రేమించు', // To love
             */
         ],
-        3: [ // 4-letter words
+        2: [ // 4-letter words
             /* 'ఎనిమిది', //Eight
             'పుస్తకం', // Book
             'కుటుంబం', // 
             'నమస్కారం', // Hello/Greeting
             'అందమైన', // Beautiful
             */
-            'పంచదార', // Sugar
+            'పంచదార' // Sugar
             // Add more 4-letter words
         ],
-        4: [ // 5-letter words
+        3: [ // 5-letter words
             //'మనదేశము', // Our country
-            'భారతదేశం', // India
+            'భారతదేశం' // India
             // Add more 5-letter words
         ]
     };
     
     // Current game level (default to 2 - 3 letter words)
-    let currentLevel = 2;
+    let currentLevel = 1;
     
     // Local storage keys
     const LEVEL_KEY = 'telugu_wordle_level';
@@ -71,7 +71,7 @@ const TeluguWordList = (function() {
             // If still no words found, return a default word
             if (!wordsByLevel[currentLevel] || wordsByLevel[currentLevel].length === 0) {
                 console.error('No words found in any level!');
-                return "అమ్మ"; // Default fallback word
+                return "తెలుగు"; // Default fallback word
             }
         }
         
@@ -126,10 +126,10 @@ const TeluguWordList = (function() {
     function getLevelWordLength(level) {
         // Adjust this mapping based on your actual Telugu word structure
         switch(level) {
-            case 1: return 3; // Level 1: always 3 boxes
-            case 2: return 4; // Level 2: always 4 boxes
-            case 3: return 5; // Level 3: always 5 boxes
-            default: return 3; // Default to level 1
+            case 1: return 1; // Level 1: always 3 boxes
+            case 2: return 2; // Level 2: always 4 boxes
+            case 3: return 3; // Level 3: always 5 boxes
+            default: return 1; // Default to level 1
         }
     }
     

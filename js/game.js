@@ -279,10 +279,10 @@ const TeluguWordle = (function() {
     /**
      * Handle keyboard input
      * @param {string} input - The keyboard input (character or action)
-     * @param {string} [composedText] - Optional composed text for Telugu input
+     * @param {string} [composedtext] - Optional composed text for Telugu input
      */
-    function handleKeyInput(input, composedText) {
-        console.log('Game received input:', input, composedText);
+    function handleKeyInput(input, composedtext) {
+        console.log('Game received input:', input, composedtext);
 
         // Ignore input if game is not in playing state or if animation is in progress
         if (state.gameStatus !== 'playing' || state.revealingRow) {
@@ -294,10 +294,10 @@ const TeluguWordle = (function() {
             submitGuess();
         } else if (input === 'backspace') {
             deleteLetter();
-        } else if (input === 'submit-composition' && composedText) {
-            console.log('Handling composed text:', composedText);
+        } else if (input === 'submit-composition' && composedtext) {
+            console.log('Handling composed text:', composedtext);
             // Handle composed Telugu text
-            addComposedText(composedText);
+            addComposedText(composedtext);
         } else {
             // Handle character input
             addLetter(input);
@@ -339,7 +339,7 @@ const TeluguWordle = (function() {
     }
     
     // New function to update row with composed text
-    function updateCurrentRowWithComposedText(composedText) {
+    function updateCurrentRowWithComposedText(composedtext) {
         const currentRowIndex = state.currentRow;
         const rows = state.gameBoard.querySelectorAll('.row');
         
@@ -358,7 +358,7 @@ const TeluguWordle = (function() {
         
         // Display each Telugu character as a single unit
         for (let i = 0; i < tiles.length; i++) {
-            if (i < composedText.length) {
+            if (i < composedtext.length) {
                 tiles[i].textContent = composedText[i];
                 tiles[i].classList.add('filled');
             } else {
