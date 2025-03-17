@@ -168,6 +168,8 @@ const TeluguKeyboard = (function() {
 
     // Add function keys to the keyboard
     function addFunctionKeys(keyboard) {
+        return;
+        /*
         // Create a row for function keys
         const functionRow = document.createElement('div');
         functionRow.className = 'keyboard-row function-row';
@@ -189,6 +191,7 @@ const TeluguKeyboard = (function() {
         });
         
         keyboard.appendChild(functionRow);
+        */
     }
 
     // Create the combination panel for consonant-vowel combinations
@@ -232,7 +235,9 @@ const TeluguKeyboard = (function() {
                     // Clear the composition area
                     compositionDisplay.textContent = '';
                     currentComposition = '';
-                }
+                } else {
+                    console.warn('Nothing to submit - composition area is empty');
+                }            
             });
         }
     }
@@ -346,28 +351,7 @@ const TeluguKeyboard = (function() {
     // Modify the key press handling
     function handleKeyPress(key) {
         console.log('Handling key press:', key);
-        if (key === 'enter') {
-            // Submit the current composition if any
-            if (currentComposition) {
-                console.log('Submitting composition:', currentComposition);
-                keyHandler('submit-composition', currentComposition); // Use keyHandler instead
-                compositionDisplay.textContent = '';
-                currentComposition = '';
-            } else {
-                // Regular enter behavior
-                keyHandler('enter'); // Use keyHandler instead
-            }
-        } else if (key === 'backspace') {
-            // If we have composition text, delete from that
-            if (currentComposition) {
-                console.log('Backspace in composition');
-                currentComposition = currentComposition.slice(0, -1);
-                compositionDisplay.textContent = currentComposition;
-            } else {
-                // Regular backspace behavior
-                keyHandler('backspace'); // Use keyHandler instead
-            }
-        } else {
+        if (key && key.length > 0) {
             // Add to composition
             console.log('Adding to composition:', key);
             currentComposition += key;

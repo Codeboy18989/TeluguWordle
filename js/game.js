@@ -172,7 +172,7 @@ const TeluguWordle = (function() {
         // Recreate the game board with the correct number of boxes
         createGameBoard();
     }
-    
+
     /**
      * Adjust the number of visible tiles based on the target word length
      * @param {number} wordLength - The length of the current target word
@@ -521,6 +521,55 @@ const TeluguWordle = (function() {
         saveGameState();
     }
     
+    /**
+     * Update a row with evaluation results
+     * @param {number} rowIndex - The row index to update
+     * @param {string} guess - The guess to display
+     * @param {Array} evaluation - The evaluation results for each character
+     */
+    function updateRowWithEvaluation(rowIndex, guess, evaluation) {
+        // Get the row element
+        const rows = state.gameBoard.querySelectorAll('.row');
+        if (rowIndex < 0 || rowIndex >= rows.length) {
+            console.error('Invalid row index:', rowIndex);
+            return;
+        }
+        
+        const row = rows[rowIndex];
+        const tiles = row.querySelectorAll('.tile');
+        
+        // Check if tiles and evaluation have the same length
+        if (tiles.length !== guess.length || evaluation.length !== guess.length) {
+            console.error('Mismatch between tiles, guess, and evaluation lengths');
+            console.error('Tiles:', tiles.length, 'Guess:', guess.length, 'Evaluation:', evaluation.length);
+            return;
+        }
+        
+        // Update each tile with its character and evaluation status
+        for (let i = 0; i < tiles.length; i++) {
+            const tile = tiles[i];
+            const char = guess[i];
+            const status = evaluation[i];
+            
+            // Set the character
+            tile.textContent = char;
+            tile.classList.add('filled');
+            
+            // Set the evaluation status (with animation)
+            setTimeout(() => {
+                // Remove any previous status classes
+                tile.classList.remove('correct', 'present', 'absent');
+                
+                // Add the appropriate status class
+                tile.classList.add(status);
+                
+                // Update the keyboard key status
+                if (TeluguKeyboard) {
+                    TeluguKeyboard.updateKeyStatus(char, status);
+                }
+            }, i * 250); // Stagger the reveal animation
+        }
+    }
     /**
      * Evaluate a guess against the target word
      * @param {string} guess - The guess to evaluate
