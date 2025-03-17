@@ -135,37 +135,42 @@ const TeluguWordle = (function() {
      * Start a new game with a random target word
      */
     function startNewGame() {
-        // Clear the board
-        clearBoard();
-        
-        // Select a random target word
-        state.targetWord = TeluguWordList.getRandomWord();
-        state.targetWordParts = TeluguUtils.splitTeluguWord(state.targetWord);
-        
-        // Log for debugging - you can remove these later
-        console.log('New game word:', state.targetWord);
-        console.log('Word parts:', state.targetWordParts);
-        console.log('Word length:', state.targetWordParts.length);
-        console.log('Current level:', state.level);
-        
         // Reset game state
         state.guesses = [];
+        state.evaluations = [];
+        state.currentRow = 0;
         state.currentGuess = '';
         state.gameStatus = 'playing';
-        state.currentRow = 0;
+        state.targetWord = TeluguWordList.getRandomWord();
+        state.level = TeluguWordList.getLevel();
         
-        // Reset keyboard
-        TeluguKeyboard.resetKeyStatuses();
+        // Log information for debugging
+        const wordParts = TeluguUtils.splitTeluguWord(state.targetWord);
+        console.log('New game word:', state.targetWord);
+        console.log('Word parts:', wordParts);
+        console.log('Word length:', state.targetWord.length);
+        console.log('Current level:', state.level);
         
-        // KEY PART - Use fixed box count based on level instead of word length
-        const boxCount = TeluguWordList.getLevelWordLength(state.level);
-        adjustTileVisibility(boxCount);
+        // Clear keyboard statuses
+        if (TeluguKeyboard) {
+            TeluguKeyboard.resetKeyStatuses();
+        }
         
-        // Save initial state
+        // Adjust tiles based on current level's word length
+        const currentBoxCount = TeluguWordList.getLevelWordLength(state.level);
+        resetGameBoard(currentBoxCount);
+        
+        // Save game state
         saveGameState();
+    }
+    
+    // Add this function to reset the game board
+    function resetGameBoard(boxCount) {
+        // Clear the game board
+        state.gameBoard.innerHTML = '';
         
-        // Update the current row to highlight active tiles
-        updateCurrentRow();
+        // Recreate the game board with the correct number of boxes
+        createGameBoard();
     }
     
     /**
@@ -901,26 +906,11 @@ const TeluguWordle = (function() {
      * @param {number} level - The level to change to (1-4)
      */
     function changeLevel(level) {
-        // Only change if level is different
-        if (level === state.level) return;
-        
-        // Update level
-        state.level = level;
         TeluguWordList.setLevel(level);
         
-        // Update UI
+        startNewGame();
         updateLevelUI();
         
-        // Start a new game
-        startNewGame();
-        
-        // Add animation class to game board
-        state.gameBoard.classList.add('level-change');
-        
-        // Remove animation class after animation completes
-        setTimeout(() => {
-            state.gameBoard.classList.remove('level-change');
-        }, 800);
     }
     
     // Public API
