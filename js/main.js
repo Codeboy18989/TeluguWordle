@@ -102,58 +102,39 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set up keyboard toggle functionality for mobile
     function setupKeyboardToggle() {
         const keyboardContainer = document.getElementById('keyboard-container');
-        const toggleButton = document.getElementById('toggle-keyboard');
+        const toggleButton = document.getElementById('toggle-keyboard') || createToggleButton();
         
-        // Initialize keyboard state - visible by default
         let keyboardVisible = true;
         
-        // Toggle keyboard visibility when button is clicked
         toggleButton.addEventListener('click', function() {
             keyboardVisible = !keyboardVisible;
             
             if (keyboardVisible) {
-                keyboardContainer.style.display = 'block';
-                document.getElementById('game-board').style.paddingBottom = '140px';
+                keyboardContainer.classList.remove('minimized');
+                toggleButton.classList.remove('minimized');
+                toggleButton.innerHTML = '🔽'; // Down arrow
             } else {
-                keyboardContainer.style.display = 'none';
-                document.getElementById('game-board').style.paddingBottom = '10px';
+                keyboardContainer.classList.add('minimized');
+                toggleButton.classList.add('minimized');
+                toggleButton.innerHTML = '🔼'; // Up arrow
             }
         });
         
-        // Auto-hide keyboard on small screens in portrait orientation
-        function checkOrientation() {
-            // Only apply auto-hide on very small screens in portrait mode
-            if (window.innerHeight < 600 && window.innerWidth < window.innerHeight) {
-                if (keyboardVisible) {
-                    toggleButton.click(); // Auto-hide on first load for small screens
-                }
-            }
+        // Check initial state when page loads
+        if (keyboardContainer.classList.contains('minimized')) {
+            keyboardVisible = false;
+            toggleButton.classList.add('minimized');
+            toggleButton.innerHTML = '🔼';
         }
-        
-        // Check on page load and resize
-        checkOrientation();
-        window.addEventListener('resize', checkOrientation);
     }
     
-    // Handle dark mode toggle if implemented in settings
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    if (darkModeToggle) {
-        const settings = GameStorage.getSettings();
-        
-        // Set initial state
-        if (settings.darkTheme) {
-            document.body.classList.add('dark-theme');
-        }
-        
-        darkModeToggle.addEventListener('click', function() {
-            // Toggle dark mode class on body
-            document.body.classList.toggle('dark-theme');
-            
-            // Update settings
-            const newSettings = GameStorage.getSettings();
-            newSettings.darkTheme = document.body.classList.contains('dark-theme');
-            GameStorage.saveSettings(newSettings);
-        });
+    function createToggleButton() {
+        const button = document.createElement('button');
+        button.id = 'toggle-keyboard';
+        button.innerHTML = '🔽';
+        document.body.appendChild(button);
+        return button;
     }
+    
     
 });
