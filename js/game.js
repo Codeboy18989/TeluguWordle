@@ -960,7 +960,95 @@ const TeluguWordle = (function() {
         updateLevelUI();
         
     }
+
+    function gameLost(){
+        //update game status
+        state.gameStatus = 'lost';
+
+        //save game state
+        saveGameState();
+
+        // Show game over message with the correct word
+        const message = `Game Over! The word was: ${state.targetWord}`;
+        showNotification(message, 5000); // Show for 5 seconds
+        
+        // Optional: Show a game over modal
+        showGameOverModal(false, state.targetWord);
+    }
+
+    /**
+     * Handle game won scenario
+     */
+    function gameWon() {
+        // Update game status
+        state.gameStatus = 'won';
+        
+        // Save game state
+        saveGameState();
+        
+        // Show success message
+        showNotification('Congratulations! You guessed the word!', 3000);
+        
+        // Optional: Show a victory modal
+        showGameOverModal(true);
+    }
     
+    /**
+     * Show game over modal
+     * @param {boolean} won - Whether the player won or lost
+     * @param {string} [correctWord] - The correct word (for lost games)
+     */
+    function showGameOverModal(won, correctWord = '') {
+        // Create modal content
+        let modalContent = '';
+        
+        if (won) {
+            modalContent = `
+                <h2>Congratulations!</h2>
+                <p>You guessed the word in ${state.currentRow + 1} ${state.currentRow === 0 ? 'try' : 'tries'}!</p>
+                <button id="new-game-btn" class="modal-button">New Game</button>
+            `;
+        } else {
+            modalContent = `
+                <h2>Game Over</h2>
+                <p>The word was: <strong>${correctWord}</strong></p>
+                <button id="new-game-btn" class="modal-button">New Game</button>
+            `;
+        }
+        
+        // Show the modal
+        const modal = document.getElementById('game-over-modal') || createGameOverModal();
+        modal.querySelector('.modal-content').innerHTML = modalContent;
+        modal.style.display = 'flex';
+        
+        // Add event listener to new game button
+        const newGameBtn = document.getElementById('new-game-btn');
+        if (newGameBtn) {
+            newGameBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+                startNewGame();
+            });
+        }
+    }
+
+    /**
+     * Create game over modal if it doesn't exist
+     * @returns {HTMLElement} The modal element
+     */
+    function createGameOverModal() {
+        const modal = document.createElement('div');
+        modal.id = 'game-over-modal';
+        modal.className = 'modal';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <!-- Content will be added dynamically -->
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        return modal;
+    }
     // Public API
     return {
         init,
