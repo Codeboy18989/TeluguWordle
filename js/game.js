@@ -322,12 +322,16 @@ const TeluguWordle = (function() {
     function addComposedText(composedtext) {
         console.log('Adding composed text:', composedtext);
     
+        // Split the text into proper Telugu characters
+        const teluguUnits = TeluguUtils.splitTeluguWord(composedtext);
+        console.log('Telugu units:', teluguUnits, 'count:', teluguUnits.length);
         // Get current word length for the selected level
         const currentLevelBoxCount = TeluguWordList.getLevelWordLength(TeluguWordList.getLevel());
         
-        // Check if there's space for this composed text
-        if (composedtext.length > currentLevelBoxCount) {
+        // Check if there's space for this composed text using the correct unit count
+        if (teluguUnits.length > currentLevelBoxCount) {
             console.warn('Composed text too long for current level');
+            console.warn(`Units: ${teluguUnits.length}, Level boxes: ${currentLevelBoxCount}`);
             showNotification('Text too long for this level');
             shakeCurrentRow();
             return;
@@ -337,14 +341,14 @@ const TeluguWordle = (function() {
         state.currentGuess = composedtext;
         
         // Update the display to show the composed text
-        updateCurrentRowWithComposedText(composedtext);
+        updateCurrentRowWithComposedText(composedtext, teluguUnits);
         
         // Automatically submit the guess
         submitGuess();
     }
     
     // New function to update row with composed text
-    function updateCurrentRowWithComposedText(composedtext) {
+    function updateCurrentRowWithComposedText(rowIndex, teluguUnits, evaluation) {
         const currentRowIndex = state.currentRow;
         const rows = state.gameBoard.querySelectorAll('.row');
         
@@ -363,8 +367,8 @@ const TeluguWordle = (function() {
         
         // Display each Telugu character as a single unit
         for (let i = 0; i < tiles.length; i++) {
-            if (i < composedtext.length) {
-                tiles[i].textContent = composedtext[i];
+            if (i < teluguUnits.length) {
+                tiles[i].textContent = teluguUnits[i];
                 tiles[i].classList.add('filled');
             } else {
                 tiles[i].textContent = '';
@@ -479,11 +483,13 @@ const TeluguWordle = (function() {
             return;
         }
         
-        const currentLevelBoxCount = TeluguWordList.getLevelWordLength(TeluguWordList.getLevel());
+        // Split into Telugu character units for proper counting
+        const teluguUnits = TeluguUtils.splitTeluguWord(state.currentGuess);
+        const currentLevelBoxCount = TeluguWordList.getLevelWordLength(state.level);
         
-        // Check if the guess has the correct number of characters
-        if (state.currentGuess.length !== currentLevelBoxCount) {
-            showNotification(`Word must be ${currentLevelBoxCount} characters`);
+        // Check if the guess has the correct number of units
+        if (teluguUnits.length !== currentLevelBoxCount) {
+            showNotification(`Word must be ${currentLevelBoxCount} Telugu units`);
             shakeCurrentRow();
             return;
         }
@@ -495,15 +501,15 @@ const TeluguWordle = (function() {
             return;
         }
         
-        // Add the guess to the list (use the full composed text)
+        // Add the guess to the list
         state.guesses.push(state.currentGuess);
         
         // Evaluate the guess
         const evaluation = evaluateGuess(state.currentGuess);
         state.evaluations.push(evaluation);
         
-        // Update the UI based on evaluation
-        updateRowWithEvaluation(state.currentRow, state.currentGuess, evaluation);
+        // Update the UI based on evaluation - pass the Telugu units
+        updateRowWithEvaluation(state.currentRow, teluguUnits, evaluation);
         
         // Check if the game is won
         if (evaluation.every(e => e === 'correct')) {
@@ -527,7 +533,7 @@ const TeluguWordle = (function() {
      * @param {string} guess - The guess to display
      * @param {Array} evaluation - The evaluation results for each character
      */
-    function updateRowWithEvaluation(rowIndex, guess, evaluation) {
+    function updateRowWithEvaluation(rowIndex, teluguUnits, evaluation) {
         // Get the row element
         const rows = state.gameBoard.querySelectorAll('.row');
         if (rowIndex < 0 || rowIndex >= rows.length) {
@@ -539,20 +545,20 @@ const TeluguWordle = (function() {
         const tiles = row.querySelectorAll('.tile');
         
         // Check if tiles and evaluation have the same length
-        if (tiles.length !== guess.length || evaluation.length !== guess.length) {
-            console.error('Mismatch between tiles, guess, and evaluation lengths');
-            console.error('Tiles:', tiles.length, 'Guess:', guess.length, 'Evaluation:', evaluation.length);
+        if (tiles.length < teluguUnits.length || evaluation.length !== teluguUnits.length) {
+            console.error('Mismatch between tiles, units, and evaluation lengths');
+            console.error('Tiles:', tiles.length, 'Units:', teluguUnits.length, 'Evaluation:', evaluation.length);
             return;
         }
         
         // Update each tile with its character and evaluation status
-        for (let i = 0; i < tiles.length; i++) {
+        for (let i = 0; i < teluguUnits.length; i++) {
             const tile = tiles[i];
-            const char = guess[i];
+            const unit = teluguUnits[i];
             const status = evaluation[i];
             
             // Set the character
-            tile.textContent = char;
+            tile.textContent = unit;
             tile.classList.add('filled');
             
             // Set the evaluation status (with animation)
@@ -565,7 +571,7 @@ const TeluguWordle = (function() {
                 
                 // Update the keyboard key status
                 if (TeluguKeyboard) {
-                    TeluguKeyboard.updateKeyStatus(char, status);
+                    TeluguKeyboard.updateKeyStatus(unit, status);
                 }
             }, i * 250); // Stagger the reveal animation
         }
@@ -576,62 +582,55 @@ const TeluguWordle = (function() {
      * @returns {Array} Array of evaluation results
      */
     function evaluateGuess(guess) {
-        const guessParts = TeluguUtils.splitTeluguWord(guess);
-        const results = [];
+        const evaluation = [];
+        const targetChars = state.targetWord.split('');
         
-        // Make copies to avoid modifying originals
-        const targetCopy = [...state.targetWordParts];
-        const guessCopy = [...guessParts];
+        // Copy of target characters to track which have been matched
+        const remainingTargetChars = [...targetChars];
         
-        // Create a map to track which target parts have been matched
-        const matched = new Array(targetCopy.length).fill(false);
-        
-        // First pass: Identify correct positions (green)
-        for (let i = 0; i < guessCopy.length; i++) {
-            if (i < targetCopy.length) {
-                if (TeluguUtils.normalizeTeluguText(guessCopy[i]) === TeluguUtils.normalizeTeluguText(targetCopy[i])) {
-                    results[i] = { letter: guessCopy[i], status: 'correct' };
-                    matched[i] = true;
-                } else {
-                    // Placeholder for now
-                    results[i] = { letter: guessCopy[i], status: 'absent' };
+        // First pass: find correct letters
+        for (let i = 0; i < guess.length; i++) {
+            const guessChar = guess[i];
+            
+            // Exact match (correct position)
+            if (i < targetChars.length && guessChar === targetChars[i]) {
+                evaluation[i] = 'correct';
+                
+                // Remove this character from remaining targets
+                const index = remainingTargetChars.indexOf(guessChar);
+                if (index !== -1) {
+                    remainingTargetChars.splice(index, 1);
                 }
             } else {
-                // Handle case where guess is longer than target
-                results[i] = { letter: guessCopy[i], status: 'absent' };
+                evaluation[i] = null; // Placeholder for second pass
             }
         }
         
-        // Second pass: Identify present but misplaced letters (yellow)
-        for (let i = 0; i < guessCopy.length; i++) {
-            if (results[i].status === 'correct') {
-                continue; // Skip already matched positions
-            }
+        // Second pass: find present letters
+        for (let i = 0; i < guess.length; i++) {
+            const guessChar = guess[i];
             
-            let foundMatch = false;
+            // Skip already determined "correct" positions
+            if (evaluation[i] === 'correct') {
+                continue;
+            }
             
             // Check if this character exists elsewhere in the target
-            for (let j = 0; j < targetCopy.length; j++) {
-                // Skip positions that are already perfectly matched
-                if (matched[j]) continue;
+            const index = remainingTargetChars.indexOf(guessChar);
+            if (index !== -1) {
+                // Character exists elsewhere (present)
+                evaluation[i] = 'present';
                 
-                // Compare normalized characters
-                if (TeluguUtils.normalizeTeluguText(guessCopy[i]) === TeluguUtils.normalizeTeluguText(targetCopy[j])) {
-                    results[i].status = 'present';
-                    matched[j] = true; // Mark this target position as matched
-                    foundMatch = true;
-                    break;
-                }
-            }
-            
-            // If no match found, it remains 'absent'
-            if (!foundMatch) {
-                results[i].status = 'absent';
+                // Remove this character from remaining targets
+                remainingTargetChars.splice(index, 1);
+            } else {
+                // Character doesn't exist (absent)
+                evaluation[i] = 'absent';
             }
         }
         
-        console.log('Evaluation:', guess, results.map(r => r.status).join(', ')); // Debug output
-        return results;
+        console.log('Evaluation:', guess, evaluation.join(', '));
+        return evaluation;
     }
     
     /**
