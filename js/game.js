@@ -50,6 +50,9 @@ const TeluguWordle = (function() {
         
         // Set up level selector
         setupLevelSelector();
+        if (window.innerWidth <= 480) {
+            setupCompactViewToggle();
+        }
     }
     /**
      * Set up level selector
@@ -1048,6 +1051,24 @@ const TeluguWordle = (function() {
         
         document.body.appendChild(modal);
         return modal;
+    }
+
+    function setupCompactViewToggle() {
+        const toggleButton = document.createElement('button');
+        toggleButton.id = 'compact-view-toggle';
+        toggleButton.textContent = 'Compact View';
+        toggleButton.className = 'mobile-only';
+        
+        const header = document.querySelector('header');
+        header.after(toggleButton);
+        
+        let compactView = false;
+        
+        toggleButton.addEventListener('click', function() {
+            compactView = !compactView;
+            document.body.classList.toggle('compact-view', compactView);
+            toggleButton.textContent = compactView ? 'Regular View' : 'Compact View';
+        });
     }
     // Public API
     return {
