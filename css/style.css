@@ -632,3 +632,33 @@ main {
 .composition-submit:hover {
     background-color: #45a049;
 }
+
+/* Added for obstructing tiles
+/* Add this to your style.css */
+#toggle-keyboard {
+    position: relative;
+    z-index: 2100; /* Higher than the keyboard z-index */
+    margin-bottom: 10px;
+}
+
+.game-board {
+    /* Increase bottom padding to ensure tiles stay visible */
+    padding-bottom: 60px !important;
+    position: relative;
+    z-index: 1100; /* Higher than keyboard but lower than toggle button */
+}
+
+.keyboard-container.minimized {
+    transform: translateY(calc(100% - 40px)) !important;
+    z-index: 1000; /* Lower z-index when minimized */
+}
+
+/* Add proper clearance at the bottom of the page */
+body {
+    padding-bottom: 350px; /* Increase this value to have more space */
+}
+
+main {
+    position: relative;
+    z-index: 1200; /* Ensure main content stays above keyboard */
+}
