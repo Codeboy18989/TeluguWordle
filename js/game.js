@@ -505,8 +505,11 @@ const TeluguWordle = (function() {
         // Add the guess to the list of guesses
         state.guesses.push(state.currentGuess);
         
-        // Get the target word for the current level and word index
-        const targetWord = TeluguWordList.getWordForLevel(state.level, state.wordIndex);
+        // Get the target word - use the correct method from your TeluguWordList
+        // Replace this line:
+        // const targetWord = TeluguWordList.getWordForLevel(state.level, state.wordIndex);
+        // With:
+        const targetWord = state.targetWord; // Use the existing targetWord from state
         
         // Evaluate the guess against the target word
         const evaluation = evaluateGuess(state.currentGuess, targetWord);
