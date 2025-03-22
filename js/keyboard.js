@@ -411,6 +411,39 @@ const TeluguKeyboard = (function() {
         }
     }
     
+    function addTransparencySlider() {
+        const sliderContainer = document.createElement('div');
+        sliderContainer.className = 'transparency-control';
+        
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = '20';
+        slider.max = '100';
+        slider.value = '70';
+        slider.id = 'transparency-slider';
+        
+        sliderContainer.appendChild(slider);
+        
+        const keyboardContainer = document.querySelector('.keyboard-container');
+        keyboardContainer.appendChild(sliderContainer);
+        
+        slider.addEventListener('input', function() {
+            const opacity = this.value / 100;
+            keyboardContainer.style.backgroundColor = `rgba(255, 255, 255, ${opacity})`;
+            
+            // Adjust key opacity proportionally
+            const keyOpacity = Math.min(opacity + 0.2, 1); // Keys slightly more opaque
+            const keys = document.querySelectorAll('.key');
+            keys.forEach(key => {
+                // Don't adjust already evaluated keys with color status
+                if (!key.classList.contains('correct') && 
+                    !key.classList.contains('present') && 
+                    !key.classList.contains('absent')) {
+                    key.style.backgroundColor = `rgba(211, 214, 218, ${keyOpacity})`;
+                }
+            });
+        });
+    }
     
     // Public API
     return {

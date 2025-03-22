@@ -544,9 +544,19 @@ const TeluguWordle = (function() {
         // Save the game state
         saveGameState();
         
-        // Clear composition area
-        updateComposedTextDisplay();
+        // Clear composition area - use a different approach if updateComposedTextDisplay isn't defined
+        // Instead of calling updateComposedTextDisplay(), let's clear it directly
+        const compositionDisplay = document.getElementById('composition-display');
+        if (compositionDisplay) {
+            compositionDisplay.textContent = '';
+        }
         
+        // Check game status
+        if (isCorrect) {
+            gameWon();
+        } else if (state.currentRow >= 6) {
+            gameLost();
+        }
         // Check game status
         if (isCorrect) {
             gameWon();
@@ -562,7 +572,7 @@ const TeluguWordle = (function() {
      * @param {Array} evaluation - The evaluation results for each character
      */
     function updateRowWithEvaluation(rowIndex, units, evaluation) {
-        const row = document.querySelector(`.row[data-row="${rowIndex}"]`);
+        state.gameBoard.querySelectorAll('.row');
         if (!row) {
             console.error(`Row ${rowIndex} not found`);
             return;
