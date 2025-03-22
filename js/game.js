@@ -479,55 +479,77 @@ const TeluguWordle = (function() {
      * Submit the current guess
      */
     function submitGuess() {
-        // Validate current guess
-        if (!state.currentGuess) {
-            showNotification('Please enter a word');
-            shakeCurrentRow();
+        // Check if current guess is empty
+        if (!state.currentGuess || state.currentGuess.trim() === '') {
+            showNotification('Please enter a word', 1500);
             return;
         }
         
-        // Split into Telugu character units for proper counting
-        const teluguUnits = TeluguUtils.splitTeluguWord(state.currentGuess);
-        const currentLevelBoxCount = TeluguWordList.getLevelWordLength(state.level);
+        // Get the current guess and split it into Telugu units
+        const currentGuessUnits = TeluguUtils.splitTeluguWord(state.currentGuess);
+        const expectedLength = TeluguWordList.getLevelWordLength(state.level);
         
-        // Check if the guess has the correct number of units
-        if (teluguUnits.length !== currentLevelBoxCount) {
-            showNotification(`Word must be ${currentLevelBoxCount} Telugu units`);
-            shakeCurrentRow();
+        // Validate guess length (in terms of Telugu units)
+        if (currentGuessUnits.length !== expectedLength) {
+            showNotification(`Word must be ${expectedLength} characters long`, 1500);
             return;
         }
         
-        // Check if the word is valid
+        // Validate if it's a real word
         if (!TeluguWordList.isValidWord(state.currentGuess)) {
-            showNotification('Not in word list');
-            shakeCurrentRow();
+            showNotification('Not in word list', 1500);
+            shakeTiles(state.currentRow);
             return;
         }
         
-        // Add the guess to the list
+        // Add the guess to the list of guesses
         state.guesses.push(state.currentGuess);
         
-        // Evaluate the guess
-        const evaluation = evaluateGuess(state.currentGuess);
-        state.evaluations.push(evaluation);
+        // Get the target word for the current level and word index
+        const targetWord = TeluguWordList.getWordForLevel(state.level, state.wordIndex);
         
-        // Update the UI based on evaluation - pass the Telugu units
-        updateRowWithEvaluation(state.currentRow, teluguUnits, evaluation);
+        // Evaluate the guess against the target word
+        const evaluation = evaluateGuess(state.currentGuess, targetWord);
         
-        // Check if the game is won
-        if (evaluation.every(e => e === 'correct')) {
-            gameWon();
-        } else if (state.currentRow >= CONFIG.MAX_ATTEMPTS - 1) {
-            gameLost();
-        } else {
-            // Move to the next row
-            state.currentRow++;
-            state.currentGuess = '';
-            updateCurrentRow();
+        // Debug logging
+        console.log(`Submitting guess: ${state.currentGuess}`);
+        console.log(`Units count: ${currentGuessUnits.length}, Evaluation length: ${evaluation.length}`);
+        
+        // Ensure evaluation length matches the units length
+        if (currentGuessUnits.length !== evaluation.length) {
+            console.error("Evaluation length mismatch. Adjusting...");
+            // Trim or pad the evaluation array to match the units count
+            while (evaluation.length > currentGuessUnits.length) {
+                evaluation.pop();
+            }
+            while (evaluation.length < currentGuessUnits.length) {
+                evaluation.push('absent');
+            }
         }
+        
+        // Update the UI with evaluation results
+        updateRowWithEvaluation(state.currentRow, currentGuessUnits, evaluation);
+        
+        // Check if the guess is correct (all evaluations are 'correct')
+        const isCorrect = evaluation.every(status => status === 'correct');
+        
+        // Update the state
+        state.currentRow++;
+        state.currentGuess = '';
+        state.composedText = '';
         
         // Save the game state
         saveGameState();
+        
+        // Clear composition area
+        updateComposedTextDisplay();
+        
+        // Check game status
+        if (isCorrect) {
+            gameWon();
+        } else if (state.currentRow >= 6) {
+            gameLost();
+        }
     }
     
     /**
@@ -536,104 +558,107 @@ const TeluguWordle = (function() {
      * @param {string} guess - The guess to display
      * @param {Array} evaluation - The evaluation results for each character
      */
-    function updateRowWithEvaluation(rowIndex, teluguUnits, evaluation) {
-        // Get the row element
-        const rows = state.gameBoard.querySelectorAll('.row');
-        if (rowIndex < 0 || rowIndex >= rows.length) {
-            console.error('Invalid row index:', rowIndex);
+    function updateRowWithEvaluation(rowIndex, units, evaluation) {
+        const row = document.querySelector(`.row[data-row="${rowIndex}"]`);
+        if (!row) {
+            console.error(`Row ${rowIndex} not found`);
             return;
         }
         
-        const row = rows[rowIndex];
         const tiles = row.querySelectorAll('.tile');
         
-        // Check if tiles and evaluation have the same length
-        if (tiles.length < teluguUnits.length || evaluation.length !== teluguUnits.length) {
-            console.error('Mismatch between tiles, units, and evaluation lengths');
-            console.error('Tiles:', tiles.length, 'Units:', teluguUnits.length, 'Evaluation:', evaluation.length);
+        // Check for length mismatches and log details
+        if (tiles.length !== units.length || units.length !== evaluation.length) {
+            console.error(`Mismatch between tiles, units, and evaluation lengths`);
+            console.error(`Tiles: ${tiles.length} Units: ${units.length} Evaluation: ${evaluation.length}`);
+            
+            // Handle the mismatch by using only the available data
+            const minLength = Math.min(tiles.length, units.length, evaluation.length);
+            
+            // Process only the available tiles
+            for (let i = 0; i < minLength; i++) {
+                const tile = tiles[i];
+                const unit = units[i];
+                const status = evaluation[i];
+                
+                // Update tile with unit and status
+                updateTileWithDelay(tile, unit, status, i);
+            }
             return;
         }
         
-        // Update each tile with its character and evaluation status
-        for (let i = 0; i < teluguUnits.length; i++) {
+        // Normal processing when lengths match
+        for (let i = 0; i < tiles.length; i++) {
             const tile = tiles[i];
-            const unit = teluguUnits[i];
+            const unit = units[i];
             const status = evaluation[i];
             
-            // Set the character
-            tile.textContent = unit;
-            tile.classList.add('filled');
-            
-            // Set the evaluation status (with animation)
-            setTimeout(() => {
-                // Remove any previous status classes
-                tile.classList.remove('correct', 'present', 'absent');
-                
-                // Add the appropriate status class
-                tile.classList.add(status);
-                
-                // Update the keyboard key status
-                if (TeluguKeyboard) {
-                    TeluguKeyboard.updateKeyStatus(unit, status);
-                }
-            }, i * 250); // Stagger the reveal animation
+            updateTileWithDelay(tile, unit, status, i);
         }
     }
+
+    // Helper function for tile updates with delay
+function updateTileWithDelay(tile, unit, status, index) {
+    setTimeout(() => {
+        if (tile.textContent !== unit) {
+            tile.textContent = unit;
+        }
+        
+        // Make sure status is a string
+        if (typeof status !== 'string') {
+            console.error(`Invalid status type: ${typeof status}`, status);
+            return;
+        }
+        
+        tile.classList.add('evaluated');
+        tile.classList.add(status);
+    }, index * 100);
+}
     /**
      * Evaluate a guess against the target word
      * @param {string} guess - The guess to evaluate
      * @returns {Array} Array of evaluation results
      */
-    function evaluateGuess(guess) {
-        const evaluation = [];
-        const targetChars = state.targetWord.split('');
+    function evaluateGuess(guess, targetWord) {
+        // Split both into Telugu character units
+        const guessUnits = TeluguUtils.splitTeluguWord(guess);
+        const targetUnits = TeluguUtils.splitTeluguWord(targetWord);
         
-        // Copy of target characters to track which have been matched
-        const remainingTargetChars = [...targetChars];
+        // Sanity check - units should match the expected length
+        if (guessUnits.length !== targetUnits.length) {
+            console.error(`Unit length mismatch: guess=${guessUnits.length}, target=${targetUnits.length}`);
+            // Return a default evaluation array matching the guess length
+            return guessUnits.map(() => 'absent');
+        }
+
+        const evaluation = [];
+        const targetUnitsCopy = [...targetUnits];
         
         // First pass: find correct letters
-        for (let i = 0; i < guess.length; i++) {
-            const guessChar = guess[i];
-            
-            // Exact match (correct position)
-            if (i < targetChars.length && guessChar === targetChars[i]) {
+        for (let i = 0; i < guessUnits.length; i++) {
+            if (guessUnits[i] === targetUnits[i]) {
                 evaluation[i] = 'correct';
-                
-                // Remove this character from remaining targets
-                const index = remainingTargetChars.indexOf(guessChar);
-                if (index !== -1) {
-                    remainingTargetChars.splice(index, 1);
+                targetUnitsCopy[i] = null; // Mark as used
+            } else {
+                evaluation[i] = null; // Placeholder for now
+            }
+        }
+        
+        // Second pass: check for present but wrong position
+        for (let i = 0; i < guessUnits.length; i++) {
+            if (evaluation[i] === null) {
+                const indexInTarget = targetUnitsCopy.indexOf(guessUnits[i]);
+                if (indexInTarget !== -1) {
+                    evaluation[i] = 'present';
+                    targetUnitsCopy[indexInTarget] = null; // Mark as used
+                } else {
+                    evaluation[i] = 'absent';
                 }
-            } else {
-                evaluation[i] = null; // Placeholder for second pass
             }
         }
         
-        // Second pass: find present letters
-        for (let i = 0; i < guess.length; i++) {
-            const guessChar = guess[i];
-            
-            // Skip already determined "correct" positions
-            if (evaluation[i] === 'correct') {
-                continue;
-            }
-            
-            // Check if this character exists elsewhere in the target
-            const index = remainingTargetChars.indexOf(guessChar);
-            if (index !== -1) {
-                // Character exists elsewhere (present)
-                evaluation[i] = 'present';
-                
-                // Remove this character from remaining targets
-                remainingTargetChars.splice(index, 1);
-            } else {
-                // Character doesn't exist (absent)
-                evaluation[i] = 'absent';
-            }
-        }
-        
-        console.log('Evaluation:', guess, evaluation.join(', '));
-        return evaluation;
+        // Debug log
+        console.log(`Evaluation length: ${evaluation.length}, Guess units: ${guessUnits.length}`);        return evaluation;
     }
     
     /**
