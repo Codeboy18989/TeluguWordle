@@ -270,21 +270,24 @@ const TeluguWordle = (function() {
      * @param {string} letter - The letter to add
      */
     function addLetter(letter) {
-        const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
         const isVowelDiacritic = TeluguUtils.isVowelDiacritic(letter);
 
-        // Vowel diacritics (signs) combine with existing characters and don't add new parts
-        // So they should be allowed even when at max length
-        if (!isVowelDiacritic) {
-            // Check if we've reached word length limit for regular characters
-            if (currentGuessParts.length >= state.targetWordParts.length) {
-                return;
-            }
-        } else {
-            // For vowel diacritics, we need at least one character to attach to
-            if (state.currentGuess.length === 0) {
-                return;
-            }
+        // For vowel diacritics, we need at least one character to attach to
+        if (isVowelDiacritic && state.currentGuess.length === 0) {
+            return;
+        }
+
+        // Try adding the letter temporarily to see what the result would be
+        const testGuess = state.currentGuess + letter;
+        const testParts = TeluguUtils.splitTeluguWord(testGuess);
+
+        console.log('Attempting to add:', letter, 'Current:', state.currentGuess, 'Test parts:', testParts, 'Length:', testParts.length, 'Max:', state.targetWordParts.length);
+
+        // For vowel diacritics, always allow (they combine with existing chars)
+        // For other characters, only allow if we won't exceed max length
+        if (!isVowelDiacritic && testParts.length > state.targetWordParts.length) {
+            console.log('Blocked: would exceed max length');
+            return;
         }
 
         // Add the letter to current guess
