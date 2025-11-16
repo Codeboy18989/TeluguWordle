@@ -132,10 +132,21 @@ const TeluguUtils = (function() {
 
     // Helper function to normalize Telugu text (handle special cases and conjuncts)
     function normalizeTeluguText(text) {
-        // Replace any zero-width characters if they're standing alone
-        text = text.replace(/[\u200C\u200D]/g, '');
-        
-        // Handle other normalization if needed
+        if (!text) return text;
+
+        // Apply Unicode NFC (Canonical Composition) normalization
+        // This ensures that characters with multiple representations are standardized
+        // For example, base+diacritic combinations vs precomposed characters
+        text = text.normalize('NFC');
+
+        // Remove standalone zero-width characters (but keep them if part of valid conjuncts)
+        // ZWNJ (U+200C) and ZWJ (U+200D) can be significant in Telugu conjuncts
+        // We only remove them if they appear in isolation
+        text = text.replace(/(?<!్)[\u200C\u200D](?!్)/g, '');
+
+        // Normalize multiple spaces to single space
+        text = text.replace(/\s+/g, ' ').trim();
+
         return text;
     }
 

@@ -19,10 +19,29 @@
     const wordMessage = document.getElementById('word-message');
     const wordHistory = document.getElementById('word-history');
     
-    // Admin credentials - in a real app, this would be server-side!
-    // For better security, consider using a hash function and salt
+    // ============================================================================
+    // WARNING: INSECURE CLIENT-SIDE AUTHENTICATION
+    // ============================================================================
+    // This is a client-side only authentication system for demonstration purposes.
+    // It provides NO REAL SECURITY since anyone can view the source code!
+    //
+    // For production use, you should:
+    // 1. Implement proper server-side authentication
+    // 2. Use secure password hashing (bcrypt, argon2, etc.)
+    // 3. Implement HTTPS and secure session management
+    // 4. Add CSRF protection
+    // 5. Consider OAuth or other proper authentication mechanisms
+    //
+    // This current implementation is ONLY suitable for:
+    // - Personal/private use where code inspection isn't a concern
+    // - Demonstration/educational purposes
+    // - Development/testing environments
+    // ============================================================================
+
+    // CHANGE THESE CREDENTIALS if using this code!
+    // Anyone who can view the source code can see these values!
     const ADMIN_USERNAME = 'admin';
-    const ADMIN_PASSWORD = 'telugu123'; // Change this to something secure!
+    const ADMIN_PASSWORD = 'telugu123';
     
     // Local storage keys
     const AUTH_TOKEN_KEY = 'telugu_wordle_auth';
@@ -134,36 +153,67 @@
     // Handle setting a new word
     function handleSetWord() {
         const newWord = newWordInput.value.trim();
-        
-        // Validate the word
+
+        // Validate the word is not empty
         if (!newWord) {
             wordMessage.textContent = 'Please enter a word';
             wordMessage.className = 'error-message';
             return;
         }
-        
-        // Check if it's a valid Telugu word
-        const wordParts = TeluguUtils.splitTeluguWord(newWord);
-        if (wordParts.length < 3 || wordParts.length > 5) {
-            wordMessage.textContent = 'Word must be 3-5 Telugu units in length';
+
+        // Normalize the word for consistent validation
+        const normalizedWord = TeluguUtils.normalizeTeluguText(newWord);
+
+        // Check if it's a valid Telugu word from the dictionary
+        if (!TeluguWordList.isValidWord(normalizedWord)) {
+            wordMessage.textContent = `"${newWord}" is not in the word dictionary. Please use a valid Telugu word from the game's word list.`;
             wordMessage.className = 'error-message';
             return;
         }
-        
+
+        // Check word length (3-5 Telugu units)
+        const wordParts = TeluguUtils.splitTeluguWord(normalizedWord);
+        if (wordParts.length < 3 || wordParts.length > 5) {
+            wordMessage.textContent = `Word must be 3-5 Telugu units in length (found ${wordParts.length} units)`;
+            wordMessage.className = 'error-message';
+            return;
+        }
+
+        // Check if word is in target word list (suitable as a solution)
+        const isTargetWord = TeluguWordList.targetWordList.some(word =>
+            TeluguUtils.normalizeTeluguText(word) === normalizedWord
+        );
+
+        if (!isTargetWord) {
+            wordMessage.textContent = `"${newWord}" is in the dictionary but not in the target word list. It can be used as a guess but not as a solution.`;
+            wordMessage.className = 'error-message';
+            return;
+        }
+
         // Get the target date
         const targetDate = wordDateInput.valueAsDate || new Date();
         const dateString = formatDate(targetDate);
-        
-        // Save the word
+
+        // Check if a word is already set for this date
         const dailyWords = getDailyWords();
-        dailyWords[dateString] = newWord;
+        if (dailyWords[dateString]) {
+            const confirmOverwrite = confirm(
+                `A word "${dailyWords[dateString]}" is already set for ${dateString}. Do you want to replace it with "${newWord}"?`
+            );
+            if (!confirmOverwrite) {
+                return;
+            }
+        }
+
+        // Save the word
+        dailyWords[dateString] = normalizedWord;
         saveDailyWords(dailyWords);
-        
+
         // Update UI
-        wordMessage.textContent = `Word "${newWord}" set for ${dateString}`;
+        wordMessage.textContent = `Word "${normalizedWord}" set for ${dateString} (${wordParts.length} units)`;
         wordMessage.className = 'success-message';
         newWordInput.value = '';
-        
+
         // Refresh displays
         loadCurrentWord();
         loadWordHistory();

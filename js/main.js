@@ -102,7 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Register service worker for offline capabilities if supported
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+            // Use relative path for flexible deployment (works in subdirectories)
+            navigator.serviceWorker.register('./service-worker.js').then(function(registration) {
                 console.log('ServiceWorker registration successful with scope: ', registration.scope);
             }, function(err) {
                 console.log('ServiceWorker registration failed: ', err);
