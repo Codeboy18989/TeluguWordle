@@ -271,9 +271,9 @@ const TeluguWordle = (function() {
      */
     function addLetter(letter) {
         const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
-        
-        // Check if we've reached word length limit
-        if (currentGuessParts.length >= CONFIG.WORD_LENGTH) {
+
+        // Check if we've reached word length limit (use dynamic target word length)
+        if (currentGuessParts.length >= state.targetWordParts.length) {
             return;
         }
         

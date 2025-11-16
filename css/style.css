@@ -1,3 +1,16 @@
+/* Font loading optimization */
+/* Ensure text remains visible during webfont load */
+@font-face {
+    font-family: 'Noto Sans Telugu Fallback';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Noto Sans Telugu'),
+         local('Pothana2000'),
+         local('Gautami'),
+         local('sans-serif');
+    font-display: swap; /* Show fallback font immediately while loading */
+}
+
 /* Base styles */
 :root {
     /* Game colors */
@@ -29,7 +42,18 @@
 }
 
 body {
-    font-family: 'Noto Sans Telugu', 'Arial', sans-serif;
+    /* Comprehensive Telugu font fallback chain:
+     * 1. Noto Sans Telugu - Primary web font from Google Fonts
+     * 2. Pothana2000 - Popular open-source Telugu font
+     * 3. Vemana2000 - Another common Telugu font
+     * 4. Lohit Telugu - Linux default Telugu font
+     * 5. Gautami - Windows default Telugu font
+     * 6. Tunga - Alternative Windows Telugu font
+     * 7. Raavi - Gurmukhi but may support Telugu on some systems
+     * 8. sans-serif - System default sans-serif font
+     */
+    font-family: 'Noto Sans Telugu', 'Pothana2000', 'Vemana2000', 'Lohit Telugu',
+                 'Gautami', 'Tunga', 'Raavi', sans-serif;
     background-color: var(--color-background);
     color: var(--color-text);
     display: flex;
