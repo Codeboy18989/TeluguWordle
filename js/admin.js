@@ -118,16 +118,9 @@
     
     // Load and display the current word
     function loadCurrentWord() {
-        const dailyWords = getDailyWords();
-        const today = formatDate(new Date());
-
-        let displayWord = '';
-        if (dailyWords[today]) {
-            displayWord = dailyWords[today];
-        } else {
-            // If no word set for today, show the random word that would be selected
-            displayWord = TeluguWordList.getRandomWord();
-        }
+        // Use the SAME logic as the game to get today's word
+        // This ensures admin and game always show the same word
+        const displayWord = TeluguWordList.getRandomWord();
 
         // Split to show unit count
         const wordParts = TeluguUtils.splitTeluguWord(displayWord);

@@ -816,13 +816,31 @@ const TeluguWordList = (function() {
         // Check if there's a daily word set for today
         const dailyWord = getTodaysWord();
         if (dailyWord) {
-            console.log("Using daily word:", dailyWord);
+            console.log("Using admin-set daily word:", dailyWord);
             return dailyWord;
         }
-        
-        // If no daily word, select a random one
-        const randomIndex = Math.floor(Math.random() * targetWordList.length);
-        return targetWordList[randomIndex];
+
+        // If no daily word set by admin, use date-based "word of the day"
+        // This ensures the same word is used throughout the day for all users
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        const wordOfDay = getWordOfDay(today);
+        console.log("Using date-based word of the day:", wordOfDay);
+        return wordOfDay;
+    }
+
+    // Generate a consistent word for a given date using a simple hash
+    function getWordOfDay(dateString) {
+        // Simple hash function to convert date string to a number
+        let hash = 0;
+        for (let i = 0; i < dateString.length; i++) {
+            const char = dateString.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+
+        // Use absolute value and modulo to get index
+        const index = Math.abs(hash) % targetWordList.length;
+        return targetWordList[index];
     }
     // Add this new function to get today's word
     function getTodaysWord() {
@@ -868,6 +886,7 @@ const TeluguWordList = (function() {
         getRandomWord,
         isValidWord,
         getWordCount,
-        getTodaysWord
+        getTodaysWord,
+        getWordOfDay
     };
 })();
