@@ -16,7 +16,7 @@ const TeluguKeyboard = (function() {
             ['య', 'ర', 'ల', 'వ', 'శ'],
             ['ష', 'స', 'హ', 'ళ', 'క్ష'],
         ],
-        
+
         // Vowels layout
         vowels: [
             ['అ', 'ఆ', 'ఇ', 'ఈ', 'ఉ'],
@@ -24,13 +24,25 @@ const TeluguKeyboard = (function() {
             ['ఎ', 'ఏ', 'ఐ', 'ఒ', 'ఓ'],
             ['ఔ', 'అం', 'అః'],
         ],
-        
+
         // Vowel diacritics (for combining with consonants)
         vowelDiacritics: [
             ['ా', 'ి', 'ీ', 'ు', 'ూ'],
             ['ృ', 'ౄ', 'ె', 'ే', 'ై'],
             ['ొ', 'ో', 'ౌ', 'ం', 'ః'],
             ['్'] // Virama (Pollu) - removes inherent vowel
+        ],
+
+        // Common conjuncts (double consonants) - for learners
+        conjuncts: [
+            ['క్క', 'గ్గ', 'చ్చ', 'జ్జ', 'ట్ట'],
+            ['డ్డ', 'త్త', 'ద్ద', 'న్న', 'ప్ప'],
+            ['బ్బ', 'మ్మ', 'య్య', 'ర్ర', 'ల్ల'],
+            ['వ్వ', 'స్స', 'ళ్ళ', 'క్ష', 'ఱ్ఱ'],
+            ['క్త', 'క్ర', 'గ్ర', 'ప్ర', 'బ్ర'],
+            ['త్ర', 'ద్ర', 'స్త', 'స్ప', 'స్ర'],
+            ['ష్ట', 'ష్ణ', 'ల్క', 'ర్క', 'ర్త'],
+            ['ర్చ', 'ర్ణ', 'ర్మ', 'ర్య', 'ర్వ'],
         ]
     };
 
@@ -77,7 +89,8 @@ const TeluguKeyboard = (function() {
         const tabs = {
             'consonants': 'హల్లులు (Consonants)',
             'vowels': 'అచ్చులు (Vowels)',
-            'vowelDiacritics': 'గుణింతాలు (Vowel Signs)'
+            'vowelDiacritics': 'గుణింతాలు (Signs)',
+            'conjuncts': 'యుక్తాలు (Conjuncts)'
         };
         
         for (const [tabId, tabLabel] of Object.entries(tabs)) {
