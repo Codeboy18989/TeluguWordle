@@ -120,13 +120,22 @@
     function loadCurrentWord() {
         const dailyWords = getDailyWords();
         const today = formatDate(new Date());
-        
+
+        let displayWord = '';
         if (dailyWords[today]) {
-            currentWordDisplay.textContent = dailyWords[today];
+            displayWord = dailyWords[today];
         } else {
             // If no word set for today, show the random word that would be selected
-            currentWordDisplay.textContent = TeluguWordList.getRandomWord() + ' (random)';
+            displayWord = TeluguWordList.getRandomWord();
         }
+
+        // Split to show unit count
+        const wordParts = TeluguUtils.splitTeluguWord(displayWord);
+        currentWordDisplay.textContent = `${displayWord} (${wordParts.length} units)`;
+
+        console.log('Admin - Current word:', displayWord);
+        console.log('Admin - Word parts:', wordParts);
+        console.log('Admin - Unit count:', wordParts.length);
     }
     
     // Load and display word history
