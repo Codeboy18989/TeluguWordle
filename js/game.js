@@ -66,34 +66,12 @@ const TeluguWordle = (function() {
     
     /**
      * Create the game board DOM elements
+     * Note: Tiles are created dynamically in adjustTileVisibility()
      */
     function createGameBoard() {
         // Clear existing board
         state.gameBoard.innerHTML = '';
-        
-        // Create rows
-        for (let i = 0; i < CONFIG.MAX_ATTEMPTS; i++) {
-            const row = document.createElement('div');
-            row.className = 'row';
-            row.dataset.row = i;
-            
-            // Create tiles in the row based on the current word length
-            // We'll adjust this dynamically when a new word is selected
-            for (let j = 0; j < CONFIG.MAX_WORD_LENGTH; j++) {
-                const tile = document.createElement('div');
-                tile.className = 'tile';
-                tile.dataset.col = j;
-                
-                // Initially hide tiles that exceed the minimum length
-                if (j >= CONFIG.MIN_WORD_LENGTH) {
-                    tile.classList.add('hidden-tile');
-                }
-                
-                row.appendChild(tile);
-            }
-            
-            state.gameBoard.appendChild(row);
-        }
+        // Board will be populated when adjustTileVisibility() is called
     }
     
     /**
@@ -132,31 +110,40 @@ const TeluguWordle = (function() {
     }
     
     /**
-     * Adjust the number of visible tiles based on the target word length
+     * Rebuild the game board with the exact number of tiles needed
+     * This completely avoids hidden tile issues
      * @param {number} wordLength - The length of the current target word
      */
     function adjustTileVisibility(wordLength) {
-        console.log('Adjusting tile visibility for word length:', wordLength);
-        
+        console.log('Rebuilding board for word length:', wordLength);
+
         // Ensure wordLength is within our supported range
         wordLength = Math.max(CONFIG.MIN_WORD_LENGTH, Math.min(wordLength, CONFIG.MAX_WORD_LENGTH));
-        
-        // Update all rows to show only the required number of tiles
+
+        // Clear and rebuild the entire board
+        state.gameBoard.innerHTML = '';
+
+        // Create rows with exactly wordLength tiles each
         for (let i = 0; i < CONFIG.MAX_ATTEMPTS; i++) {
-            const row = state.gameBoard.querySelector(`.row[data-row="${i}"]`);
-            const tiles = row.querySelectorAll('.tile');
-            
-            tiles.forEach((tile, index) => {
-                if (index < wordLength) {
-                    tile.classList.remove('hidden-tile');
-                } else {
-                    tile.classList.add('hidden-tile');
-                }
-            });
+            const row = document.createElement('div');
+            row.className = 'row';
+            row.dataset.row = i;
+
+            // Create exactly wordLength tiles (no more, no less)
+            for (let j = 0; j < wordLength; j++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.dataset.col = j;
+                row.appendChild(tile);
+            }
+
+            state.gameBoard.appendChild(row);
         }
-        
-        // Also adjust the row styles for proper centering
+
+        // Update CSS variable for consistent styling
         document.documentElement.style.setProperty('--current-word-length', wordLength);
+
+        console.log('Board rebuilt: 6 rows x', wordLength, 'columns');
     }
     
     /**
@@ -190,7 +177,7 @@ const TeluguWordle = (function() {
             const row = state.gameBoard.querySelector(`.row[data-row="${i}"]`);
             
             // Fill in the tiles
-            const tiles = row.querySelectorAll('.tile:not(.hidden-tile)');
+            const tiles = row.querySelectorAll('.tile');
             for (let j = 0; j < guessParts.length; j++) {
                 if (j < tiles.length) {
                     tiles[j].textContent = guessParts[j];
@@ -214,7 +201,7 @@ const TeluguWordle = (function() {
         if (state.currentGuess && state.gameStatus === 'playing') {
             const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
             const currentRow = state.gameBoard.querySelector(`.row[data-row="${state.currentRow}"]`);
-            const tiles = currentRow.querySelectorAll('.tile:not(.hidden-tile)');
+            const tiles = currentRow.querySelectorAll('.tile');
             
             for (let j = 0; j < currentGuessParts.length; j++) {
                 if (j < tiles.length) {
@@ -272,23 +259,38 @@ const TeluguWordle = (function() {
     function addLetter(letter) {
         const isVowelDiacritic = TeluguUtils.isVowelDiacritic(letter);
 
+        console.log('=== ADD LETTER DEBUG ===');
+        console.log('Letter to add:', letter, 'Is diacritic:', isVowelDiacritic);
+        console.log('Current guess:', state.currentGuess);
+        console.log('Current guess length (chars):', state.currentGuess.length);
+
         // For vowel diacritics, we need at least one character to attach to
         if (isVowelDiacritic && state.currentGuess.length === 0) {
+            console.log('BLOCKED: Diacritic with no base character');
             return;
         }
+
+        // Get current parts
+        const currentParts = TeluguUtils.splitTeluguWord(state.currentGuess);
+        console.log('Current parts:', currentParts, 'Count:', currentParts.length);
 
         // Try adding the letter temporarily to see what the result would be
         const testGuess = state.currentGuess + letter;
         const testParts = TeluguUtils.splitTeluguWord(testGuess);
 
-        console.log('Attempting to add:', letter, 'Current:', state.currentGuess, 'Test parts:', testParts, 'Length:', testParts.length, 'Max:', state.targetWordParts.length);
+        console.log('Test guess:', testGuess);
+        console.log('Test parts:', testParts, 'Count:', testParts.length);
+        console.log('Target parts:', state.targetWordParts, 'Count:', state.targetWordParts.length);
+        console.log('Would exceed?', testParts.length, '>', state.targetWordParts.length, '=', testParts.length > state.targetWordParts.length);
 
         // For vowel diacritics, always allow (they combine with existing chars)
         // For other characters, only allow if we won't exceed max length
         if (!isVowelDiacritic && testParts.length > state.targetWordParts.length) {
-            console.log('Blocked: would exceed max length');
+            console.log('BLOCKED: Would exceed max length');
             return;
         }
+
+        console.log('ALLOWED: Adding letter to guess');
 
         // Add the letter to current guess
         state.currentGuess += letter;
@@ -298,6 +300,8 @@ const TeluguWordle = (function() {
 
         // Save game state
         saveGameState();
+
+        console.log('=== END ADD LETTER ===');
     }
     
     /**
@@ -331,7 +335,7 @@ const TeluguWordle = (function() {
     function updateCurrentRow() {
         const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
         const currentRow = state.gameBoard.querySelector(`.row[data-row="${state.currentRow}"]`);
-        const tiles = currentRow.querySelectorAll('.tile:not(.hidden-tile)');
+        const tiles = currentRow.querySelectorAll('.tile');
         
         // Reset all tiles in the current row
         tiles.forEach(tile => {
