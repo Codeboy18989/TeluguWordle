@@ -80,33 +80,37 @@ const TeluguWordle = (function() {
     function startNewGame() {
         // Clear the board
         clearBoard();
-        
+
         // Select a random target word
         state.targetWord = TeluguWordList.getRandomWord();
         state.targetWordParts = TeluguUtils.splitTeluguWord(state.targetWord);
-        
-        // Log for debugging - you can remove these later
+
+        // DIAGNOSTIC LOGGING
+        console.log('=== NEW GAME STARTED ===');
         console.log('New game word:', state.targetWord);
         console.log('Word parts:', state.targetWordParts);
-        console.log('Word length:', state.targetWordParts.length);
-        
+        console.log('Word length (units):', state.targetWordParts.length);
+        console.log('About to create grid with', state.targetWordParts.length, 'columns');
+
         // Reset game state
         state.guesses = [];
         state.currentGuess = '';
         state.gameStatus = 'playing';
         state.currentRow = 0;
-        
+
         // Reset keyboard
         TeluguKeyboard.resetKeyStatuses();
-        
+
         // THIS IS THE KEY PART - Update UI based on the word length
         adjustTileVisibility(state.targetWordParts.length);
-        
+
         // Save initial state
         saveGameState();
-        
+
         // Update the current row to highlight active tiles
         updateCurrentRow();
+
+        console.log('=== NEW GAME SETUP COMPLETE ===');
     }
     
     /**
@@ -354,48 +358,29 @@ const TeluguWordle = (function() {
     
     /**
      * Submit the current guess
-     * Enhanced to accept partial guesses with at least 2 correct positions
+     * Option C Rules: Must fill all boxes, word must be valid
      */
     function submitGuess() {
         const currentGuessParts = TeluguUtils.splitTeluguWord(state.currentGuess);
-        const targetWordLength = state.targetWordParts.length; // DYNAMIC length
+        const targetWordLength = state.targetWordParts.length;
 
         console.log('Submitting guess:', state.currentGuess);
         console.log('Guess parts:', currentGuessParts);
         console.log('Target length:', targetWordLength);
 
-        // Check if we have at least some input
-        if (currentGuessParts.length === 0) {
-            showNotification('దయచేసి అక్షరాలు నమోదు చేయండి (Please enter letters)');
+        // Check if we have a complete word matching the target length
+        if (currentGuessParts.length !== targetWordLength) {
+            showNotification(`${targetWordLength} అక్షరాల పదం ఉండాలి (Word must be ${targetWordLength} units)`);
             shakeCurrentRow();
             return;
         }
 
-        // If guess doesn't match target length, check if it has at least 2 correct positions
-        if (currentGuessParts.length !== targetWordLength) {
-            // Pad the guess with empty units for evaluation
-            const paddedGuess = currentGuessParts.join('');
-            const tempEval = evaluateGuessPartial(paddedGuess, currentGuessParts.length);
-
-            // Count correct positions
-            const correctCount = tempEval.filter(r => r.status === 'correct').length;
-
-            if (correctCount < 2) {
-                showNotification(`కనీసం 2 సరైన అక్షరాలు లేదా ${targetWordLength} అక్షరాల పదం ఉండాలి (Need at least 2 correct letters or ${targetWordLength} units)`);
-                shakeCurrentRow();
-                return;
-            }
-
-            // Has at least 2 correct - allow submission
-            console.log(`Accepting partial guess with ${correctCount} correct positions`);
-        } else {
-            // Full length guess - check if it's a valid Telugu word
-            if (!TeluguWordList.isValidWord(state.currentGuess)) {
-                console.log('Word validation failed:', state.currentGuess);
-                showNotification('చెల్లుబాటు అయ్యే తెలుగు పదం కాదు (Not a valid Telugu word)');
-                shakeCurrentRow();
-                return;
-            }
+        // Check if it's a valid Telugu word
+        if (!TeluguWordList.isValidWord(state.currentGuess)) {
+            console.log('Word validation failed:', state.currentGuess);
+            showNotification('చెల్లుబాటు అయ్యే తెలుగు పదం కాదు (Not a valid Telugu word)');
+            shakeCurrentRow();
+            return;
         }
 
         // Add to guesses
@@ -411,32 +396,10 @@ const TeluguWordle = (function() {
         // Log success
         console.log('Guess submitted successfully:', state.currentGuess);
     }
-
-    /**
-     * Evaluate a partial guess (for validation before submission)
-     * @param {string} guess - The partial guess
-     * @param {number} guessLength - The actual length of the guess
-     * @returns {Array} Evaluation results for the partial guess
-     */
-    function evaluateGuessPartial(guess, guessLength) {
-        const guessParts = TeluguUtils.splitTeluguWord(guess);
-        const results = [];
-
-        // Only evaluate positions that exist in the guess
-        for (let i = 0; i < Math.min(guessLength, state.targetWordParts.length); i++) {
-            if (TeluguUtils.normalizeTeluguText(guessParts[i]) === TeluguUtils.normalizeTeluguText(state.targetWordParts[i])) {
-                results[i] = { letter: guessParts[i], status: 'correct' };
-            } else {
-                results[i] = { letter: guessParts[i], status: 'absent' };
-            }
-        }
-
-        return results;
-    }
     
     /**
      * Evaluate a guess against the target word
-     * Enhanced to detect partial matches (same base consonant, different vowel sign)
+     * Option C Rules: Simplified Telugu-aware evaluation
      * @param {string} guess - The guess to evaluate
      * @returns {Array} Array of evaluation results
      */
@@ -467,66 +430,46 @@ const TeluguWordle = (function() {
             }
         }
 
-        // Second pass: Check for partial matches in same position
-        // (same base consonant but different vowel sign)
+        // Second pass: Check for Telugu-specific hints in same position
+        // (same base consonant but different vowel sign - ONLY in same position)
         for (let i = 0; i < guessCopy.length; i++) {
             if (results[i].status === 'correct') {
                 continue; // Skip exact matches
             }
 
             if (i < targetCopy.length) {
-                // Check if same base consonant but different vowel sign at this position
+                // Check if same base consonant but different vowel sign at THIS position
                 if (TeluguUtils.hasSameBaseConsonant(guessCopy[i], targetCopy[i])) {
                     results[i].status = 'present';
-                    // Don't mark as matched - this is a partial match
-                    console.log(`Partial match at position ${i}: ${guessCopy[i]} vs ${targetCopy[i]}`);
+                    console.log(`Telugu hint at position ${i}: ${guessCopy[i]} vs ${targetCopy[i]} (same base consonant)`);
                 }
             }
         }
 
-        // Third pass: Identify characters that exist elsewhere in the target (yellow)
+        // Third pass: Standard Wordle logic - exact character exists elsewhere
         for (let i = 0; i < guessCopy.length; i++) {
             if (results[i].status === 'correct' || results[i].status === 'present') {
                 continue; // Skip already matched positions
             }
-
-            let foundMatch = false;
 
             // Check if this exact character exists elsewhere in the target
             for (let j = 0; j < targetCopy.length; j++) {
                 // Skip positions that are already perfectly matched
                 if (matched[j]) continue;
 
-                // Compare normalized characters
+                // Compare normalized characters - must be EXACT match
                 if (TeluguUtils.normalizeTeluguText(guessCopy[i]) === TeluguUtils.normalizeTeluguText(targetCopy[j])) {
                     results[i].status = 'present';
                     matched[j] = true; // Mark this target position as matched
-                    foundMatch = true;
+                    console.log(`Standard Wordle match: ${guessCopy[i]} exists at different position`);
                     break;
                 }
             }
 
-            // If still no match, check for base consonant match elsewhere
-            if (!foundMatch) {
-                for (let j = 0; j < targetCopy.length; j++) {
-                    if (matched[j]) continue;
-
-                    if (TeluguUtils.hasSameBaseConsonant(guessCopy[i], targetCopy[j])) {
-                        results[i].status = 'present';
-                        // Don't mark as fully matched since it's only a partial match
-                        foundMatch = true;
-                        break;
-                    }
-                }
-            }
-
             // If no match found, it remains 'absent'
-            if (!foundMatch) {
-                results[i].status = 'absent';
-            }
         }
 
-        console.log('Evaluation:', guess, results.map(r => r.status).join(', ')); // Debug output
+        console.log('Evaluation:', guess, results.map(r => r.status).join(', '));
         return results;
     }
     
