@@ -272,23 +272,38 @@ const TeluguWordle = (function() {
     function addLetter(letter) {
         const isVowelDiacritic = TeluguUtils.isVowelDiacritic(letter);
 
+        console.log('=== ADD LETTER DEBUG ===');
+        console.log('Letter to add:', letter, 'Is diacritic:', isVowelDiacritic);
+        console.log('Current guess:', state.currentGuess);
+        console.log('Current guess length (chars):', state.currentGuess.length);
+
         // For vowel diacritics, we need at least one character to attach to
         if (isVowelDiacritic && state.currentGuess.length === 0) {
+            console.log('BLOCKED: Diacritic with no base character');
             return;
         }
+
+        // Get current parts
+        const currentParts = TeluguUtils.splitTeluguWord(state.currentGuess);
+        console.log('Current parts:', currentParts, 'Count:', currentParts.length);
 
         // Try adding the letter temporarily to see what the result would be
         const testGuess = state.currentGuess + letter;
         const testParts = TeluguUtils.splitTeluguWord(testGuess);
 
-        console.log('Attempting to add:', letter, 'Current:', state.currentGuess, 'Test parts:', testParts, 'Length:', testParts.length, 'Max:', state.targetWordParts.length);
+        console.log('Test guess:', testGuess);
+        console.log('Test parts:', testParts, 'Count:', testParts.length);
+        console.log('Target parts:', state.targetWordParts, 'Count:', state.targetWordParts.length);
+        console.log('Would exceed?', testParts.length, '>', state.targetWordParts.length, '=', testParts.length > state.targetWordParts.length);
 
         // For vowel diacritics, always allow (they combine with existing chars)
         // For other characters, only allow if we won't exceed max length
         if (!isVowelDiacritic && testParts.length > state.targetWordParts.length) {
-            console.log('Blocked: would exceed max length');
+            console.log('BLOCKED: Would exceed max length');
             return;
         }
+
+        console.log('ALLOWED: Adding letter to guess');
 
         // Add the letter to current guess
         state.currentGuess += letter;
@@ -298,6 +313,8 @@ const TeluguWordle = (function() {
 
         // Save game state
         saveGameState();
+
+        console.log('=== END ADD LETTER ===');
     }
     
     /**
