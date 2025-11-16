@@ -289,6 +289,62 @@ const TeluguUtils = (function() {
         return allChars;
     }
 
+    /**
+     * Extract the base consonant from a Telugu syllable
+     * For example: 'కా' -> 'క', 'కి' -> 'క', 'క' -> 'క'
+     * @param {string} syllable - A Telugu syllable (one unit)
+     * @returns {string} The base consonant, or the original if it's a vowel
+     */
+    function getBaseConsonant(syllable) {
+        if (!syllable || syllable.length === 0) return syllable;
+
+        // Normalize first
+        syllable = normalizeTeluguText(syllable);
+
+        // If it's a standalone vowel, return as-is
+        if (isVowel(syllable)) {
+            return syllable;
+        }
+
+        // Get the first character - this is typically the base consonant
+        const firstChar = syllable[0];
+
+        // If the first character is a consonant, that's our base
+        if (isConsonant(firstChar)) {
+            return firstChar;
+        }
+
+        // For complex cases (conjuncts), just return the first character
+        return firstChar;
+    }
+
+    /**
+     * Check if two syllables have the same base consonant but different vowel signs
+     * @param {string} syllable1 - First syllable
+     * @param {string} syllable2 - Second syllable
+     * @returns {boolean} True if same base consonant but different overall
+     */
+    function hasSameBaseConsonant(syllable1, syllable2) {
+        // Normalize both
+        syllable1 = normalizeTeluguText(syllable1);
+        syllable2 = normalizeTeluguText(syllable2);
+
+        // If they're exactly the same, return false (we want partial matches)
+        if (syllable1 === syllable2) {
+            return false;
+        }
+
+        const base1 = getBaseConsonant(syllable1);
+        const base2 = getBaseConsonant(syllable2);
+
+        // Both must be consonants (not standalone vowels)
+        if (!isConsonant(base1) || !isConsonant(base2)) {
+            return false;
+        }
+
+        return base1 === base2;
+    }
+
     // Public API
     return {
         vowels,
@@ -303,6 +359,8 @@ const TeluguUtils = (function() {
         splitTeluguWord,
         compareTeluguChars,
         getAllTeluguChars,
-        generateConsonantVowelCombinations
+        generateConsonantVowelCombinations,
+        getBaseConsonant,
+        hasSameBaseConsonant
     };
 })();
