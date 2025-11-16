@@ -336,24 +336,43 @@ const TeluguKeyboard = (function() {
      * @param {string} status - The status ('correct', 'present', 'absent')
      */
     function updateKeyStatus(char, status) {
-        // Find all keys with this character
+        // Find all keys with this character (exact match)
         const keys = keyboardElement.querySelectorAll(`.key[data-char="${char}"]`);
-        
+
         keys.forEach(key => {
+            // Check current status BEFORE removing classes
+            const hasCorrect = key.classList.contains('correct');
+            const hasPresent = key.classList.contains('present');
+
+            // Don't downgrade statuses (e.g., from 'correct' to 'present')
+            if (hasCorrect) {
+                return; // Already correct, don't change
+            }
+            if (hasPresent && status === 'absent') {
+                return; // Already present, don't downgrade to absent
+            }
+
             // Remove existing status classes
             key.classList.remove('correct', 'present', 'absent');
-            
-            // Don't downgrade statuses (e.g., from 'correct' to 'present')
-            if (key.classList.contains('correct')) {
-                return;
-            }
-            if (key.classList.contains('present') && status === 'absent') {
-                return;
-            }
-            
+
             // Add new status class
             key.classList.add(status);
         });
+
+        // Also update combination panel keys if they exist
+        const comboKeys = combinationPanel?.querySelectorAll(`.combo-key[data-char="${char}"]`);
+        if (comboKeys) {
+            comboKeys.forEach(key => {
+                const hasCorrect = key.classList.contains('correct');
+                const hasPresent = key.classList.contains('present');
+
+                if (hasCorrect) return;
+                if (hasPresent && status === 'absent') return;
+
+                key.classList.remove('correct', 'present', 'absent');
+                key.classList.add(status);
+            });
+        }
     }
     
     /**

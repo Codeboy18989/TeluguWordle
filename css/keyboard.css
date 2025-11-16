@@ -150,6 +150,22 @@
     opacity: 0.9;
 }
 
+/* Combo-key status styles matching tiles */
+.combo-key.correct {
+    background-color: var(--color-correct);
+    color: white;
+}
+
+.combo-key.present {
+    background-color: var(--color-present);
+    color: white;
+}
+
+.combo-key.absent {
+    background-color: var(--color-absent);
+    color: white;
+}
+
 /* Special key styles */
 .key.enter {
     background-color: #6aaa64;
