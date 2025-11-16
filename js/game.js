@@ -9,7 +9,7 @@ const TeluguWordle = (function() {
         // Number of attempts allowed
         MAX_ATTEMPTS: 6,
         // Min and max word length (in Telugu units, not characters)
-        MIN_WORD_LENGTH: 3,
+        MIN_WORD_LENGTH: 2,  // Changed from 3 to support 2-unit words like తల, కాలు
         MAX_WORD_LENGTH: 5,
         // Animation timing
         FLIP_ANIMATION_DURATION: 500, // ms

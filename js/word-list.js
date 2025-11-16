@@ -7,7 +7,7 @@
 const TeluguWordList = (function() {
     /**
      * Main word list for the game
-     * These words are semantically 3-5 "units" in Telugu, where a unit can be:
+     * These words are semantically 2-5 "units" in Telugu, where a unit can be:
      * - A consonant-vowel combination (e.g., కా, కి, కు)
      * - An independent vowel (e.g., అ, ఆ, ఇ)
      * - A consonant with virama (e.g., క్)
@@ -259,9 +259,9 @@ const TeluguWordList = (function() {
      * - Very rare or difficult words
      * - Words with complex multiple consonant conjuncts
      * - Words with ambiguous divisions
-     * 
+     *
      * Note: Each word has been analyzed for its syllabic unit count,
-     * ensuring it falls within our 3-5 unit range for gameplay.
+     * ensuring it falls within our 2-5 unit range for gameplay.
      */
     const targetWordList = [
         // Family & People (Common words)
