@@ -705,14 +705,42 @@ const TeluguWordList = (function() {
         'అధికారి', // Officer
     ];
 
-    // Getter for combined word list (base + custom)
+    // Store for Firestore words (cached)
+    let firestoreWordsList = [];
+    let firestoreWordsLoaded = false;
+
+    // Initialize Firestore words on page load
+    async function initFirestoreWords() {
+        if (firestoreWordsLoaded) {
+            return firestoreWordsList;
+        }
+
+        // Check if Firestore is available
+        if (typeof FirebaseDB !== 'undefined' && FirebaseDB.isInitialized && FirebaseDB.isInitialized()) {
+            try {
+                console.log('🔄 Loading words from Firestore...');
+                const words = await FirestoreWords.fetchAllWords();
+                firestoreWordsList = words.map(w => w.word);
+                firestoreWordsLoaded = true;
+                console.log('✅ Loaded', firestoreWordsList.length, 'words from Firestore');
+                return firestoreWordsList;
+            } catch (error) {
+                console.error('❌ Error loading Firestore words:', error);
+            }
+        }
+
+        return [];
+    }
+
+    // Getter for combined word list (base + custom from localStorage + Firestore)
     function getAllWords() {
         const customWords = getCustomWords();
-        return [...baseWordList, ...customWords];
+        // Combine base + localStorage custom + Firestore words
+        return [...baseWordList, ...customWords, ...firestoreWordsList];
     }
 
     // Expose base list for admin to check duplicates
-    const mainWordList = getAllWords();
+    const mainWordList = baseWordList;
 
     /**
      * Target word list - words that can be solutions
@@ -908,14 +936,15 @@ const TeluguWordList = (function() {
     // Public API
     return {
         mainWordList: baseWordList,  // Base dictionary (for admin duplicate checks)
-        allWords: getAllWords(),     // Combined base + custom (for validation)
+        allWords: getAllWords(),     // Combined base + custom + Firestore (for validation)
         targetWordList,
         getRandomWord,
         isValidWord,
         getWordCount,
         getTodaysWord,
         getWordOfDay,
-        getAllWords,  // New: get combined base + custom words
-        getCustomWords  // New: get only custom words
+        getAllWords,  // Get combined base + custom + Firestore words
+        getCustomWords,  // Get only localStorage custom words
+        initFirestoreWords  // Initialize Firestore words on page load
     };
 })();

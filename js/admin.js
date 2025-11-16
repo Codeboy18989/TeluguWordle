@@ -252,22 +252,52 @@
     }
 
     // ============================================================================
-    // WORD MANAGEMENT FUNCTIONS
+    // WORD MANAGEMENT FUNCTIONS - FIRESTORE INTEGRATION
     // ============================================================================
 
-    // Get custom words from localStorage
-    function getCustomWords() {
+    // Cache for Firestore words
+    let firestoreWordsCache = null;
+
+    // Get all words from Firestore (with cache)
+    async function getAllFirestoreWords() {
+        if (firestoreWordsCache) {
+            return firestoreWordsCache;
+        }
+
+        // Try Firestore first
+        if (FirebaseDB && FirebaseDB.isInitialized()) {
+            try {
+                const words = await FirestoreWords.fetchAllWords();
+                firestoreWordsCache = words;
+                return words;
+            } catch (error) {
+                console.error('Error fetching from Firestore:', error);
+            }
+        }
+
+        // Fallback to localStorage custom words if Firestore unavailable
+        const customWords = getCustomWordsFromLocalStorage();
+        return customWords.map(word => ({
+            word: word,
+            category: 'Custom',
+            units: TeluguUtils.splitTeluguWord(word).length,
+            isTarget: false
+        }));
+    }
+
+    // Get custom words from localStorage (fallback)
+    function getCustomWordsFromLocalStorage() {
         const wordsJson = localStorage.getItem(CUSTOM_WORDS_KEY);
         return wordsJson ? JSON.parse(wordsJson) : [];
     }
 
-    // Save custom words to localStorage
-    function saveCustomWords(words) {
+    // Save custom words to localStorage (fallback)
+    function saveCustomWordsToLocalStorage(words) {
         localStorage.setItem(CUSTOM_WORDS_KEY, JSON.stringify(words));
     }
 
-    // Handle adding a manual word
-    function handleAddManualWord() {
+    // Handle adding a manual word (with Firestore)
+    async function handleAddManualWord() {
         const manualWordInput = document.getElementById('manual-word');
         const messageDiv = document.getElementById('manual-word-message');
         const word = manualWordInput.value.trim();
@@ -289,42 +319,79 @@
             return;
         }
 
-        // Get existing custom words
-        const customWords = getCustomWords();
-
-        // Check if word already exists
-        if (customWords.some(w => TeluguUtils.normalizeTeluguText(w) === normalizedWord)) {
-            messageDiv.textContent = `"${normalizedWord}" is already in the custom word list`;
-            messageDiv.className = 'error-message';
-            return;
-        }
-
-        // Check if word is in base dictionary
-        if (TeluguWordList.mainWordList.some(w => TeluguUtils.normalizeTeluguText(w) === normalizedWord)) {
-            messageDiv.textContent = `"${normalizedWord}" is already in the base dictionary`;
-            messageDiv.className = 'error-message';
-            return;
-        }
-
-        // Add the word
-        customWords.push(normalizedWord);
-        saveCustomWords(customWords);
-
-        // Update UI
-        messageDiv.textContent = `Added "${normalizedWord}" (${wordParts.length} units)`;
+        // Show loading state
+        messageDiv.textContent = 'Adding word...';
         messageDiv.className = 'success-message';
-        manualWordInput.value = '';
 
-        // Refresh displays
-        updateWordCounts();
-        displayCustomWords();
+        // Try adding to Firestore first
+        if (FirebaseDB && FirebaseDB.isInitialized()) {
+            try {
+                // Check if word already exists
+                const existingWords = await getAllFirestoreWords();
+                const wordExists = existingWords.some(w =>
+                    TeluguUtils.normalizeTeluguText(w.word) === normalizedWord
+                );
 
-        // Clear message after 3 seconds
-        setTimeout(() => { messageDiv.textContent = ''; }, 3000);
+                if (wordExists) {
+                    messageDiv.textContent = `"${normalizedWord}" already exists in the dictionary`;
+                    messageDiv.className = 'error-message';
+                    return;
+                }
+
+                // Add to Firestore
+                const result = await FirestoreWords.addWord({
+                    word: normalizedWord,
+                    category: 'Custom',
+                    units: wordParts.length,
+                    isTarget: false
+                });
+
+                if (result.success) {
+                    messageDiv.textContent = `✅ Added "${normalizedWord}" to Firestore (${wordParts.length} units)`;
+                    messageDiv.className = 'success-message';
+                    manualWordInput.value = '';
+
+                    // Clear cache and refresh
+                    firestoreWordsCache = null;
+                    await updateWordCounts();
+                    await displayCustomWords();
+
+                    setTimeout(() => { messageDiv.textContent = ''; }, 3000);
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('Firestore add failed:', error);
+                messageDiv.textContent = `❌ Error: ${error.message}. Word not added.`;
+                messageDiv.className = 'error-message';
+            }
+        } else {
+            // Fallback to localStorage
+            const customWords = getCustomWordsFromLocalStorage();
+
+            if (customWords.some(w => TeluguUtils.normalizeTeluguText(w) === normalizedWord) ||
+                TeluguWordList.mainWordList.some(w => TeluguUtils.normalizeTeluguText(w) === normalizedWord)) {
+                messageDiv.textContent = `"${normalizedWord}" already exists`;
+                messageDiv.className = 'error-message';
+                return;
+            }
+
+            customWords.push(normalizedWord);
+            saveCustomWordsToLocalStorage(customWords);
+
+            messageDiv.textContent = `Added "${normalizedWord}" to localStorage (${wordParts.length} units)`;
+            messageDiv.className = 'success-message';
+            manualWordInput.value = '';
+
+            updateWordCounts();
+            displayCustomWords();
+
+            setTimeout(() => { messageDiv.textContent = ''; }, 3000);
+        }
     }
 
-    // Handle adding bulk words
-    function handleAddBulkWords() {
+    // Handle adding bulk words (with Firestore)
+    async function handleAddBulkWords() {
         const bulkWordsTextarea = document.getElementById('bulk-words');
         const messageDiv = document.getElementById('bulk-word-message');
         const input = bulkWordsTextarea.value.trim();
@@ -346,130 +413,266 @@
             return;
         }
 
-        // Get existing custom words
-        const customWords = getCustomWords();
-        let addedCount = 0;
-        let skippedCount = 0;
-        const errors = [];
+        // Show loading state
+        messageDiv.textContent = `Processing ${words.length} words...`;
+        messageDiv.className = 'success-message';
 
-        words.forEach(word => {
-            // Validate word length
-            const wordParts = TeluguUtils.splitTeluguWord(word);
-            if (wordParts.length < 2 || wordParts.length > 5) {
-                errors.push(`"${word}" - invalid length (${wordParts.length} units)`);
-                skippedCount++;
-                return;
+        // Try Firestore batch add first
+        if (FirebaseDB && FirebaseDB.isInitialized()) {
+            try {
+                const existingWords = await getAllFirestoreWords();
+                const wordsToAdd = [];
+                let skippedCount = 0;
+                const errors = [];
+
+                words.forEach(word => {
+                    // Validate word length
+                    const wordParts = TeluguUtils.splitTeluguWord(word);
+                    if (wordParts.length < 2 || wordParts.length > 5) {
+                        errors.push(`"${word}" - invalid length (${wordParts.length} units)`);
+                        skippedCount++;
+                        return;
+                    }
+
+                    // Check if already exists
+                    const wordExists = existingWords.some(w =>
+                        TeluguUtils.normalizeTeluguText(w.word) === word
+                    );
+
+                    if (wordExists) {
+                        skippedCount++;
+                        return;
+                    }
+
+                    // Add to batch
+                    wordsToAdd.push({
+                        word: word,
+                        category: 'Custom',
+                        units: wordParts.length,
+                        isTarget: false
+                    });
+                });
+
+                if (wordsToAdd.length > 0) {
+                    const result = await FirestoreWords.addWordsBatch(wordsToAdd);
+
+                    if (result.success) {
+                        let message = `✅ Added ${result.count} words to Firestore`;
+                        if (skippedCount > 0) {
+                            message += `, skipped ${skippedCount} duplicates/invalid`;
+                        }
+                        if (errors.length > 0 && errors.length <= 5) {
+                            message += '\n' + errors.join(', ');
+                        }
+
+                        messageDiv.textContent = message;
+                        messageDiv.className = 'success-message';
+                        bulkWordsTextarea.value = '';
+
+                        // Clear cache and refresh
+                        firestoreWordsCache = null;
+                        await updateWordCounts();
+                        await displayCustomWords();
+                    } else {
+                        throw new Error(result.error || 'Batch add failed');
+                    }
+                } else {
+                    messageDiv.textContent = `No new words to add (${skippedCount} duplicates/invalid)`;
+                    messageDiv.className = 'error-message';
+                }
+
+                setTimeout(() => { messageDiv.textContent = ''; }, 5000);
+            } catch (error) {
+                console.error('Firestore batch add failed:', error);
+                messageDiv.textContent = `❌ Error: ${error.message}`;
+                messageDiv.className = 'error-message';
+            }
+        } else {
+            // Fallback to localStorage
+            const customWords = getCustomWordsFromLocalStorage();
+            let addedCount = 0;
+            let skippedCount = 0;
+            const errors = [];
+
+            words.forEach(word => {
+                const wordParts = TeluguUtils.splitTeluguWord(word);
+                if (wordParts.length < 2 || wordParts.length > 5) {
+                    errors.push(`"${word}" - invalid length (${wordParts.length} units)`);
+                    skippedCount++;
+                    return;
+                }
+
+                if (customWords.some(w => TeluguUtils.normalizeTeluguText(w) === word) ||
+                    TeluguWordList.mainWordList.some(w => TeluguUtils.normalizeTeluguText(w) === word)) {
+                    skippedCount++;
+                    return;
+                }
+
+                customWords.push(word);
+                addedCount++;
+            });
+
+            saveCustomWordsToLocalStorage(customWords);
+
+            let message = `Added ${addedCount} words to localStorage`;
+            if (skippedCount > 0) {
+                message += `, skipped ${skippedCount} duplicates/invalid`;
             }
 
-            // Check if already exists in custom words
-            if (customWords.some(w => TeluguUtils.normalizeTeluguText(w) === word)) {
-                skippedCount++;
-                return;
+            messageDiv.textContent = message;
+            messageDiv.className = addedCount > 0 ? 'success-message' : 'error-message';
+
+            if (addedCount > 0) {
+                bulkWordsTextarea.value = '';
             }
 
-            // Check if already in base dictionary
-            if (TeluguWordList.mainWordList.some(w => TeluguUtils.normalizeTeluguText(w) === word)) {
-                skippedCount++;
-                return;
-            }
+            updateWordCounts();
+            displayCustomWords();
 
-            // Add the word
-            customWords.push(word);
-            addedCount++;
-        });
-
-        // Save all custom words
-        saveCustomWords(customWords);
-
-        // Update UI
-        let message = `Added ${addedCount} words`;
-        if (skippedCount > 0) {
-            message += `, skipped ${skippedCount} duplicates/invalid`;
+            setTimeout(() => { messageDiv.textContent = ''; }, 5000);
         }
-        if (errors.length > 0 && errors.length <= 5) {
-            message += '\nErrors: ' + errors.join(', ');
-        }
-
-        messageDiv.textContent = message;
-        messageDiv.className = addedCount > 0 ? 'success-message' : 'error-message';
-
-        if (addedCount > 0) {
-            bulkWordsTextarea.value = '';
-        }
-
-        // Refresh displays
-        updateWordCounts();
-        displayCustomWords();
-
-        // Clear message after 5 seconds
-        setTimeout(() => { messageDiv.textContent = ''; }, 5000);
     }
 
-    // Handle clearing all custom words
-    function handleClearCustomWords() {
+    // Handle clearing all custom words (Firestore-aware)
+    async function handleClearCustomWords() {
         if (!confirm('Are you sure you want to clear all custom words? This cannot be undone.')) {
             return;
         }
 
+        // For now, just clear localStorage (Firestore words remain in cloud)
+        // In future, could delete all words with category='Custom' from Firestore
         localStorage.removeItem(CUSTOM_WORDS_KEY);
 
         // Update UI
-        updateWordCounts();
-        displayCustomWords();
+        await updateWordCounts();
+        await displayCustomWords();
 
-        alert('All custom words have been cleared.');
+        alert('All custom words have been cleared from localStorage.');
     }
 
-    // Update word counts in the UI
-    function updateWordCounts() {
+    // Update word counts in the UI (async for Firestore)
+    async function updateWordCounts() {
         const baseCount = TeluguWordList.mainWordList.length;
-        const customCount = getCustomWords().length;
-        const totalCount = baseCount + customCount;
 
-        document.getElementById('base-word-count').textContent = baseCount;
-        document.getElementById('custom-word-count').textContent = customCount;
-        document.getElementById('total-word-count').textContent = totalCount;
-    }
+        // Try to get count from Firestore
+        if (FirebaseDB && FirebaseDB.isInitialized()) {
+            try {
+                const allWords = await getAllFirestoreWords();
+                const firestoreCount = allWords.length;
+                const totalCount = baseCount + firestoreCount;
 
-    // Display custom words list
-    function displayCustomWords() {
-        const customWords = getCustomWords();
-        const listDiv = document.getElementById('custom-words-list');
+                document.getElementById('base-word-count').textContent = baseCount;
+                document.getElementById('custom-word-count').textContent = firestoreCount;
+                document.getElementById('total-word-count').textContent = totalCount;
+            } catch (error) {
+                console.error('Error updating counts:', error);
+                // Fallback to localStorage
+                const customCount = getCustomWordsFromLocalStorage().length;
+                const totalCount = baseCount + customCount;
 
-        if (customWords.length === 0) {
-            listDiv.innerHTML = '<p>No custom words added yet.</p>';
-            return;
+                document.getElementById('base-word-count').textContent = baseCount;
+                document.getElementById('custom-word-count').textContent = customCount;
+                document.getElementById('total-word-count').textContent = totalCount;
+            }
+        } else {
+            // Use localStorage counts
+            const customCount = getCustomWordsFromLocalStorage().length;
+            const totalCount = baseCount + customCount;
+
+            document.getElementById('base-word-count').textContent = baseCount;
+            document.getElementById('custom-word-count').textContent = customCount;
+            document.getElementById('total-word-count').textContent = totalCount;
         }
-
-        // Sort alphabetically
-        customWords.sort();
-
-        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 5px;">';
-        customWords.forEach((word, index) => {
-            const wordParts = TeluguUtils.splitTeluguWord(word);
-            html += `<div style="padding: 5px; background: #f5f5f5; border-radius: 3px; text-align: center;" title="${wordParts.length} units">
-                ${word}
-                <button onclick="removeCustomWord(${index})" style="margin-left: 5px; padding: 2px 5px; font-size: 10px; background: #e74c3c;">×</button>
-            </div>`;
-        });
-        html += '</div>';
-        html += `<p style="margin-top: 10px; font-size: 12px; color: #666;">Total: ${customWords.length} custom words</p>`;
-
-        listDiv.innerHTML = html;
     }
 
-    // Remove a specific custom word (called from inline button)
-    window.removeCustomWord = function(index) {
-        const customWords = getCustomWords();
-        const word = customWords[index];
+    // Display custom words list (async for Firestore)
+    async function displayCustomWords() {
+        const listDiv = document.getElementById('custom-words-list');
+        listDiv.innerHTML = '<p>Loading words...</p>';
 
-        if (confirm(`Remove "${word}" from custom words?`)) {
-            customWords.splice(index, 1);
-            saveCustomWords(customWords);
+        try {
+            let wordsToDisplay = [];
 
-            // Refresh displays
-            updateWordCounts();
-            displayCustomWords();
+            // Try Firestore first
+            if (FirebaseDB && FirebaseDB.isInitialized()) {
+                const allWords = await getAllFirestoreWords();
+                wordsToDisplay = allWords.map(w => ({
+                    word: w.word,
+                    units: w.units,
+                    id: w.id,
+                    source: 'firestore'
+                }));
+            } else {
+                // Fallback to localStorage
+                const customWords = getCustomWordsFromLocalStorage();
+                wordsToDisplay = customWords.map((word, index) => ({
+                    word: word,
+                    units: TeluguUtils.splitTeluguWord(word).length,
+                    id: index,
+                    source: 'localStorage'
+                }));
+            }
+
+            if (wordsToDisplay.length === 0) {
+                listDiv.innerHTML = '<p>No custom words added yet.</p>';
+                return;
+            }
+
+            // Sort alphabetically
+            wordsToDisplay.sort((a, b) => a.word.localeCompare(b.word));
+
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 5px;">';
+            wordsToDisplay.forEach((item) => {
+                html += `<div style="padding: 5px; background: #f5f5f5; border-radius: 3px; text-align: center;" title="${item.units} units">
+                    ${item.word}
+                    <button onclick="removeCustomWord('${item.id}', '${item.source}')" style="margin-left: 5px; padding: 2px 5px; font-size: 10px; background: #e74c3c;">×</button>
+                </div>`;
+            });
+            html += '</div>';
+            html += `<p style="margin-top: 10px; font-size: 12px; color: #666;">Total: ${wordsToDisplay.length} custom words</p>`;
+
+            listDiv.innerHTML = html;
+        } catch (error) {
+            console.error('Error displaying words:', error);
+            listDiv.innerHTML = '<p style="color: red;">Error loading words. Check console.</p>';
+        }
+    }
+
+    // Remove a specific custom word (Firestore-aware)
+    window.removeCustomWord = async function(id, source) {
+        if (source === 'firestore') {
+            if (!confirm('Remove this word from Firestore?')) {
+                return;
+            }
+
+            try {
+                const result = await FirestoreWords.deleteWord(id);
+                if (result.success) {
+                    // Clear cache and refresh
+                    firestoreWordsCache = null;
+                    await updateWordCounts();
+                    await displayCustomWords();
+                } else {
+                    alert('Error removing word: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error removing word:', error);
+                alert('Error removing word. Check console.');
+            }
+        } else {
+            // localStorage
+            const customWords = getCustomWordsFromLocalStorage();
+            const index = parseInt(id);
+            const word = customWords[index];
+
+            if (confirm(`Remove "${word}" from custom words?`)) {
+                customWords.splice(index, 1);
+                saveCustomWordsToLocalStorage(customWords);
+
+                // Refresh displays
+                await updateWordCounts();
+                await displayCustomWords();
+            }
         }
     };
 
