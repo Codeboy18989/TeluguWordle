@@ -180,10 +180,10 @@
             return;
         }
 
-        // Check word length (3-5 Telugu units)
+        // Check word length (2-5 Telugu units)
         const wordParts = TeluguUtils.splitTeluguWord(normalizedWord);
-        if (wordParts.length < 3 || wordParts.length > 5) {
-            wordMessage.textContent = `Word must be 3-5 Telugu units in length (found ${wordParts.length} units)`;
+        if (wordParts.length < 2 || wordParts.length > 5) {
+            wordMessage.textContent = `Word must be 2-5 Telugu units in length (found ${wordParts.length} units)`;
             wordMessage.className = 'error-message';
             return;
         }
