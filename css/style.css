@@ -440,31 +440,6 @@ main {
     font-size: 12px;
 }
 
-/* Responsive adjustments */
-@media (max-width: 480px) {
-    header h1 {
-        font-size: 22px;
-    }
-    
-    .tile {
-        font-size: 1.5rem;
-    }
-    
-    #game-board {
-        max-width: 320px;
-    }
-}
-
-@media (max-width: 350px) {
-    .tile {
-        font-size: 1.2rem;
-    }
-    
-    #game-board {
-        max-width: 280px;
-    }
-}
-
 /* Utility classes */
 .hidden {
     display: none !important;
@@ -562,19 +537,294 @@ main {
     content: 'Show ';
 }
 
+/* ============================================================================
+   MOBILE OPTIMIZATIONS
+   ============================================================================ */
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+    body {
+        /* Fix for iOS Safari bottom bar */
+        height: -webkit-fill-available;
+        min-height: -webkit-fill-available;
+    }
+
+    .container {
+        height: -webkit-fill-available;
+    }
+}
+
+/* Safe area insets for notched devices */
+body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* Prevent text selection on mobile */
+* {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+}
+
+/* Allow text selection in modals */
+.modal-content {
+    -webkit-touch-callout: auto;
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* Medium screens - tablets and large phones in landscape */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 20px;
+    }
+
+    .modal-content {
+        max-width: 90%;
+        max-height: 85vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #game-board {
+        padding-bottom: 120px;
+    }
+}
+
+/* Small screens - most phones */
 @media (max-width: 480px) {
+    body {
+        padding: 0 5px;
+    }
+
+    header {
+        padding: 8px 0;
+        margin-bottom: 5px;
+        height: 45px;
+    }
+
+    header h1 {
+        font-size: 18px;
+    }
+
+    header button {
+        font-size: 16px;
+        padding: 6px;
+        min-width: 36px;
+        min-height: 36px;
+    }
+
+    .tile {
+        font-size: 1.5rem;
+        border: 1.5px solid var(--color-tile-border);
+    }
+
+    #game-board {
+        max-width: 100%;
+        gap: 4px;
+        padding-bottom: 100px;
+    }
+
+    .row {
+        gap: 4px;
+        margin-bottom: 3px;
+    }
+
     .keyboard-toggle-btn {
-        bottom: 15px;
+        bottom: 12px;
         padding: 8px 14px;
         font-size: 12px;
     }
 
     .hint-container {
-        margin: 0 10px 15px 10px;
-        padding: 10px 12px;
+        margin: 0 5px 10px 5px;
+        padding: 8px 12px;
     }
 
     .hint-text {
+        font-size: 12px;
+    }
+
+    .hint-icon {
+        font-size: 16px;
+    }
+
+    /* Modal improvements */
+    .modal-content {
+        padding: 15px;
+        max-width: 95%;
+    }
+
+    .modal-content h2 {
+        font-size: 20px;
+    }
+
+    .modal-content h3 {
+        font-size: 16px;
+    }
+
+    .modal-content p, .modal-content li {
         font-size: 13px;
+    }
+
+    /* Notification positioning */
+    #notification {
+        top: 60px;
+        max-width: 90%;
+        font-size: 13px;
+    }
+}
+
+/* Extra small screens - very small phones */
+@media (max-width: 350px) {
+    header h1 {
+        font-size: 16px;
+    }
+
+    .tile {
+        font-size: 1.2rem;
+    }
+
+    #game-board {
+        max-width: 100%;
+        gap: 3px;
+        padding-bottom: 90px;
+    }
+
+    .row {
+        gap: 3px;
+    }
+
+    .keyboard-toggle-btn {
+        bottom: 10px;
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+
+    .hint-container {
+        padding: 6px 10px;
+    }
+
+    .hint-text {
+        font-size: 11px;
+    }
+}
+
+/* Landscape orientation optimization */
+@media (max-height: 600px) and (orientation: landscape) {
+    body {
+        overflow-y: auto;
+        height: auto;
+    }
+
+    .container {
+        height: auto;
+        min-height: 100vh;
+    }
+
+    header {
+        height: 40px;
+        padding: 5px 0;
+        margin-bottom: 5px;
+    }
+
+    header h1 {
+        font-size: 16px;
+    }
+
+    #game-board {
+        padding-bottom: 80px;
+        gap: 3px;
+    }
+
+    .row {
+        gap: 3px;
+        margin-bottom: 2px;
+    }
+
+    .tile {
+        font-size: 1.2rem;
+    }
+
+    #keyboard-container {
+        padding: 3px 8px 5px;
+    }
+
+    .keyboard {
+        gap: 3px;
+    }
+
+    .keyboard-row {
+        gap: 3px;
+    }
+
+    .key {
+        height: 32px;
+        font-size: 0.85rem;
+    }
+
+    .hint-container {
+        margin: 0 5px 5px 5px;
+        padding: 6px 10px;
+    }
+
+    .keyboard-toggle-btn {
+        bottom: 8px;
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+}
+
+/* Very small landscape screens */
+@media (max-height: 450px) and (orientation: landscape) {
+    #game-board {
+        padding-bottom: 70px;
+    }
+
+    .key {
+        height: 28px;
+        font-size: 0.75rem;
+    }
+
+    .keyboard-tab {
+        padding: 3px 6px;
+        font-size: 11px;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    /* This targets touch devices */
+    .key {
+        /* Ensure minimum touch target size */
+        min-height: 40px;
+    }
+
+    header button {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    .keyboard-toggle-btn {
+        min-height: 44px;
+        min-width: 120px;
+    }
+
+    /* Remove hover effects on touch devices */
+    .key:hover,
+    header button:hover,
+    .keyboard-toggle-btn:hover {
+        opacity: 1;
+        transform: none;
+    }
+
+    /* Better active/pressed states */
+    .key:active {
+        opacity: 0.7;
+        transform: scale(0.95);
+    }
+
+    .keyboard-toggle-btn:active {
+        transform: translateX(-50%) scale(0.98);
     }
 }
