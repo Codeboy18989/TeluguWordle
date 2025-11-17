@@ -141,12 +141,51 @@
                         <p>Loading word history...</p>
                     </div>
                 </div>
-                
+
+                <!-- Word Management Section -->
+                <div class="admin-panel">
+                    <h2>Word Dictionary Management</h2>
+                    <p><strong>Base Dictionary:</strong> <span id="base-word-count">0</span> words</p>
+                    <p><strong>Custom Words:</strong> <span id="custom-word-count">0</span> words</p>
+                    <p><strong>Total:</strong> <span id="total-word-count">0</span> words</p>
+
+                    <h3>Add Words Manually</h3>
+                    <div class="form-group">
+                        <label for="manual-word">Telugu Word:</label>
+                        <input type="text" id="manual-word" placeholder="Enter a Telugu word">
+                    </div>
+                    <button id="add-manual-word-button">Add Word</button>
+                    <div id="manual-word-message" class="success-message"></div>
+
+                    <h3 style="margin-top: 20px;">Add Words in Bulk</h3>
+                    <div class="form-group">
+                        <label for="bulk-words">Paste Telugu Words (one per line):</label>
+                        <textarea id="bulk-words" rows="6" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="తల&#10;కాలు&#10;చేతి&#10;..."></textarea>
+                    </div>
+                    <button id="add-bulk-words-button">Add All Words</button>
+                    <div id="bulk-word-message" class="success-message"></div>
+
+                    <h3 style="margin-top: 20px;">Custom Words List</h3>
+                    <div id="custom-words-list" class="word-history" style="max-height: 300px;">
+                        <p>No custom words added yet.</p>
+                    </div>
+                    <button id="clear-custom-words-button" style="background-color: #e74c3c; margin-top: 10px;">Clear All Custom Words</button>
+                </div>
+
                 <button id="logout-button">Logout</button>
             </div>
         </main>
     </div>
-    
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase config and operations -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firestore-words.js"></script>
+
+    <!-- App scripts -->
     <script src="js/telugu-utils.js"></script>
     <script src="js/word-list.js"></script>
     <script src="js/admin.js"></script>

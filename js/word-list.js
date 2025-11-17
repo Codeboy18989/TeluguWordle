@@ -5,8 +5,22 @@
  */
 
 const TeluguWordList = (function() {
+    // Local storage key for custom words
+    const CUSTOM_WORDS_KEY = 'telugu_wordle_custom_words';
+
+    // Get custom words from localStorage
+    function getCustomWords() {
+        try {
+            const wordsJson = localStorage.getItem(CUSTOM_WORDS_KEY);
+            return wordsJson ? JSON.parse(wordsJson) : [];
+        } catch (e) {
+            console.error('Error loading custom words:', e);
+            return [];
+        }
+    }
+
     /**
-     * Main word list for the game
+     * Main word list for the game (BASE DICTIONARY)
      * These words are semantically 2-5 "units" in Telugu, where a unit can be:
      * - A consonant-vowel combination (e.g., కా, కి, కు)
      * - An independent vowel (e.g., అ, ఆ, ఇ)
@@ -14,7 +28,7 @@ const TeluguWordList = (function() {
      * - A consonant-consonant conjunct (treated as a single unit)
      * - Special cases: syllables with anusvara (ం) or visarga (ః) are treated as a single unit
      */
-    const mainWordList = [
+    const baseWordList = [
         // Family & People (Expanded)
         'అమ్మా', // Mother
         'నాన్న', // Father
@@ -691,6 +705,43 @@ const TeluguWordList = (function() {
         'అధికారి', // Officer
     ];
 
+    // Store for Firestore words (cached)
+    let firestoreWordsList = [];
+    let firestoreWordsLoaded = false;
+
+    // Initialize Firestore words on page load
+    async function initFirestoreWords() {
+        if (firestoreWordsLoaded) {
+            return firestoreWordsList;
+        }
+
+        // Check if Firestore is available
+        if (typeof FirebaseDB !== 'undefined' && FirebaseDB.isInitialized && FirebaseDB.isInitialized()) {
+            try {
+                console.log('🔄 Loading words from Firestore...');
+                const words = await FirestoreWords.fetchAllWords();
+                firestoreWordsList = words.map(w => w.word);
+                firestoreWordsLoaded = true;
+                console.log('✅ Loaded', firestoreWordsList.length, 'words from Firestore');
+                return firestoreWordsList;
+            } catch (error) {
+                console.error('❌ Error loading Firestore words:', error);
+            }
+        }
+
+        return [];
+    }
+
+    // Getter for combined word list (base + custom from localStorage + Firestore)
+    function getAllWords() {
+        const customWords = getCustomWords();
+        // Combine base + localStorage custom + Firestore words
+        return [...baseWordList, ...customWords, ...firestoreWordsList];
+    }
+
+    // Expose base list for admin to check duplicates
+    const mainWordList = baseWordList;
+
     /**
      * Target word list - words that can be solutions
      * This is a subset of the main word list, potentially excluding:
@@ -857,20 +908,23 @@ const TeluguWordList = (function() {
             return null;
         }
     }
-    // Helper function to check if a word is valid (exists in the main word list)
+    // Helper function to check if a word is valid (exists in main + custom word lists)
     function isValidWord(word) {
         // Normalize the word before checking (handle any character normalization)
         const normalizedWord = TeluguUtils.normalizeTeluguText(word);
-        
-        // Check if the normalized word exists in the main word list
-        for (let i = 0; i < mainWordList.length; i++) {
-            if (TeluguUtils.normalizeTeluguText(mainWordList[i]) === normalizedWord) {
+
+        // Get all words (base + custom)
+        const allWords = getAllWords();
+
+        // Check if the normalized word exists in the combined word list
+        for (let i = 0; i < allWords.length; i++) {
+            if (TeluguUtils.normalizeTeluguText(allWords[i]) === normalizedWord) {
                 return true;
             }
         }
-        
+
         // For debugging
-        console.log('Invalid word:', word, 'not found in dictionary');
+        console.log('Invalid word:', word, 'not found in dictionary (checked', allWords.length, 'words)');
         return false;
     }
 
@@ -881,12 +935,16 @@ const TeluguWordList = (function() {
 
     // Public API
     return {
-        mainWordList,
+        mainWordList: baseWordList,  // Base dictionary (for admin duplicate checks)
+        allWords: getAllWords(),     // Combined base + custom + Firestore (for validation)
         targetWordList,
         getRandomWord,
         isValidWord,
         getWordCount,
         getTodaysWord,
-        getWordOfDay
+        getWordOfDay,
+        getAllWords,  // Get combined base + custom + Firestore words
+        getCustomWords,  // Get only localStorage custom words
+        initFirestoreWords  // Initialize Firestore words on page load
     };
 })();

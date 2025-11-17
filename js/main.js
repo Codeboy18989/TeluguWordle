@@ -4,7 +4,16 @@
  * Initializes the game and sets up event listeners.
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize Firestore words first (if available)
+    if (typeof TeluguWordList !== 'undefined' && TeluguWordList.initFirestoreWords) {
+        try {
+            await TeluguWordList.initFirestoreWords();
+        } catch (error) {
+            console.warn('Firestore initialization failed, using base dictionary:', error);
+        }
+    }
+
     // Initialize the game
     TeluguWordle.init();
     
