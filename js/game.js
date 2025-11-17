@@ -375,18 +375,19 @@ const TeluguWordle = (function() {
             return;
         }
 
-        // Check if it's a valid Telugu word
-        if (!TeluguWordList.isValidWord(state.currentGuess)) {
-            console.log('Word validation failed:', state.currentGuess);
-            showNotification('చెల్లుబాటు అయ్యే తెలుగు పదం కాదు (Not a valid Telugu word)');
-            shakeCurrentRow();
-            return;
+        // Check if it's a valid Telugu word (but don't block submission)
+        // This allows learners to see color feedback even for invalid words
+        const isValidWord = TeluguWordList.isValidWord(state.currentGuess);
+        if (!isValidWord) {
+            console.log('Word not in dictionary:', state.currentGuess, '- but showing feedback anyway');
+            // Show a brief notification, but continue with evaluation
+            showNotification('నిఘంటువులో లేదు, కానీ రంగులు చూడండి (Not in dictionary, but check the colors)');
         }
 
         // Add to guesses
         state.guesses.push(state.currentGuess);
 
-        // Evaluate the guess
+        // Evaluate the guess (always show color feedback)
         const evaluation = evaluateGuess(state.currentGuess);
 
         // Start the reveal animation
