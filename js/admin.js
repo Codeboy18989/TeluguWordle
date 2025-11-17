@@ -47,6 +47,7 @@
     const AUTH_TOKEN_KEY = 'telugu_wordle_auth';
     const DAILY_WORDS_KEY = 'telugu_wordle_daily_words';
     const CUSTOM_WORDS_KEY = 'telugu_wordle_custom_words';
+    const HINT_KEY = 'telugu_wordle_hint';
     
     // Initialize
     function init() {
@@ -54,6 +55,13 @@
         loginButton.addEventListener('click', handleLogin);
         logoutButton.addEventListener('click', handleLogout);
         setWordButton.addEventListener('click', handleSetWord);
+
+        // Hint management listeners
+        const setHintButton = document.getElementById('set-hint-button');
+        const clearHintButton = document.getElementById('clear-hint-button');
+
+        if (setHintButton) setHintButton.addEventListener('click', handleSetHint);
+        if (clearHintButton) clearHintButton.addEventListener('click', handleClearHint);
 
         // Word management listeners
         const addManualWordButton = document.getElementById('add-manual-word-button');
@@ -118,6 +126,9 @@
         // Load word management data
         updateWordCounts();
         displayCustomWords();
+
+        // Load hint data
+        loadCurrentHint();
     }
     
     // Show login panel, hide admin
@@ -249,6 +260,87 @@
     // Format date as YYYY-MM-DD
     function formatDate(date) {
         return date.toISOString().split('T')[0];
+    }
+
+    // ============================================================================
+    // HINT MANAGEMENT FUNCTIONS
+    // ============================================================================
+
+    // Load and display current hint
+    function loadCurrentHint() {
+        const hintData = localStorage.getItem(HINT_KEY);
+        const currentHintDisplay = document.getElementById('current-hint-display');
+        const currentHintText = document.getElementById('current-hint-text');
+        const hintInput = document.getElementById('hint-input');
+
+        if (hintData) {
+            try {
+                const hint = JSON.parse(hintData);
+                const today = new Date().toISOString().split('T')[0];
+
+                if (hint.date === today && hint.text) {
+                    currentHintText.textContent = hint.text;
+                    currentHintDisplay.style.display = 'block';
+                    hintInput.value = hint.text;
+                } else {
+                    currentHintDisplay.style.display = 'none';
+                    hintInput.value = '';
+                }
+            } catch (e) {
+                console.error('Error loading hint:', e);
+                currentHintDisplay.style.display = 'none';
+            }
+        } else {
+            currentHintDisplay.style.display = 'none';
+            hintInput.value = '';
+        }
+    }
+
+    // Handle setting a new hint
+    function handleSetHint() {
+        const hintInput = document.getElementById('hint-input');
+        const messageDiv = document.getElementById('hint-message');
+        const hintText = hintInput.value.trim();
+
+        if (!hintText) {
+            messageDiv.textContent = 'Please enter a hint';
+            messageDiv.className = 'error-message';
+            setTimeout(() => { messageDiv.textContent = ''; }, 3000);
+            return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const hintData = {
+            text: hintText,
+            date: today
+        };
+
+        localStorage.setItem(HINT_KEY, JSON.stringify(hintData));
+
+        messageDiv.textContent = 'Hint set successfully! Players will see it on the game page.';
+        messageDiv.className = 'success-message';
+
+        // Update the current hint display
+        loadCurrentHint();
+
+        setTimeout(() => { messageDiv.textContent = ''; }, 3000);
+    }
+
+    // Handle clearing the hint
+    function handleClearHint() {
+        const messageDiv = document.getElementById('hint-message');
+        const hintInput = document.getElementById('hint-input');
+
+        localStorage.removeItem(HINT_KEY);
+
+        hintInput.value = '';
+        messageDiv.textContent = 'Hint cleared!';
+        messageDiv.className = 'success-message';
+
+        // Update the current hint display
+        loadCurrentHint();
+
+        setTimeout(() => { messageDiv.textContent = ''; }, 3000);
     }
 
     // ============================================================================

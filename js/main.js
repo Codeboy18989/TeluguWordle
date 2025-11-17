@@ -16,12 +16,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Initialize the game
     TeluguWordle.init();
-    
+
     // Add event listeners for physical keyboard input
     document.addEventListener('keydown', handlePhysicalKeyboard);
-    
+
     // Setup keyboard toggle button for mobile view
     setupKeyboardToggle();
+
+    // Load and display hint
+    loadHint();
     
     // Handle physical keyboard input
     function handlePhysicalKeyboard(event) {
@@ -51,27 +54,30 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     
-    // Set up keyboard toggle functionality for mobile
+    // Set up keyboard toggle functionality
     function setupKeyboardToggle() {
         const keyboardContainer = document.getElementById('keyboard-container');
         const toggleButton = document.getElementById('toggle-keyboard');
-        
+        const toggleText = toggleButton.querySelector('.toggle-text');
+
         // Initialize keyboard state - visible by default
         let keyboardVisible = true;
-        
+
         // Toggle keyboard visibility when button is clicked
         toggleButton.addEventListener('click', function() {
             keyboardVisible = !keyboardVisible;
-            
+
             if (keyboardVisible) {
                 keyboardContainer.style.display = 'block';
-                document.getElementById('game-board').style.paddingBottom = '140px';
+                toggleButton.classList.remove('keyboard-hidden');
+                toggleText.textContent = 'Hide Keyboard';
             } else {
                 keyboardContainer.style.display = 'none';
-                document.getElementById('game-board').style.paddingBottom = '10px';
+                toggleButton.classList.add('keyboard-hidden');
+                toggleText.textContent = 'Keyboard';
             }
         });
-        
+
         // Auto-hide keyboard on small screens in portrait orientation
         function checkOrientation() {
             // Only apply auto-hide on very small screens in portrait mode
@@ -81,10 +87,39 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             }
         }
-        
+
         // Check on page load and resize
         checkOrientation();
         window.addEventListener('resize', checkOrientation);
+    }
+
+    // Load and display hint from admin
+    function loadHint() {
+        const HINT_KEY = 'telugu_wordle_hint';
+        const hintContainer = document.getElementById('hint-container');
+        const hintText = document.getElementById('hint-text');
+
+        try {
+            const hintData = localStorage.getItem(HINT_KEY);
+            if (hintData) {
+                const hint = JSON.parse(hintData);
+                const today = new Date().toISOString().split('T')[0];
+
+                // Check if hint is for today's word
+                if (hint.date === today && hint.text && hint.text.trim()) {
+                    hintText.textContent = hint.text;
+                    hintContainer.style.display = 'block';
+                    console.log('Loaded hint:', hint.text);
+                } else {
+                    hintContainer.style.display = 'none';
+                }
+            } else {
+                hintContainer.style.display = 'none';
+            }
+        } catch (e) {
+            console.error('Error loading hint:', e);
+            hintContainer.style.display = 'none';
+        }
     }
     
     // Handle dark mode toggle if implemented in settings
