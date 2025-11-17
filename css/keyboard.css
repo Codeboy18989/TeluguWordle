@@ -187,31 +187,134 @@
 @media (max-width: 480px) {
     .key {
         height: 40px;
-        font-size: 1rem;
+        font-size: 0.95rem;
         min-width: 24px;
+        padding: 0 2px;
     }
-    
+
     .key.wide, .key.extra-wide {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
-    
+
     .keyboard-row {
+        gap: 3px;
+    }
+
+    .keyboard {
         gap: 4px;
     }
-    
-    .keyboard {
-        gap: 6px;
+
+    #keyboard-container {
+        padding: 4px 6px 8px;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .keyboard-tabs {
+        margin-bottom: 3px;
+    }
+
+    .keyboard-tab {
+        padding: 4px 6px;
+        font-size: 12px;
     }
 }
 
 @media (max-width: 350px) {
     .key {
         height: 36px;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         min-width: 20px;
+        padding: 0 1px;
     }
-    
+
+    .key.wide, .key.extra-wide {
+        font-size: 0.7rem;
+    }
+
     .keyboard-row {
+        gap: 2px;
+    }
+
+    .keyboard {
         gap: 3px;
+    }
+
+    #keyboard-container {
+        padding: 3px 4px 6px;
+    }
+
+    .keyboard-tab {
+        padding: 3px 5px;
+        font-size: 11px;
+    }
+}
+
+/* Landscape mode keyboard optimization */
+@media (max-height: 600px) and (orientation: landscape) {
+    #keyboard-container {
+        padding: 2px 6px 4px;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .keyboard {
+        gap: 2px;
+    }
+
+    .keyboard-row {
+        gap: 2px;
+    }
+
+    .key {
+        height: 32px;
+        font-size: 0.85rem;
+        min-width: 22px;
+    }
+
+    .key.wide, .key.extra-wide {
+        font-size: 0.7rem;
+    }
+
+    .keyboard-tab {
+        padding: 2px 5px;
+        font-size: 11px;
+    }
+
+    .keyboard-tabs {
+        margin-bottom: 2px;
+    }
+}
+
+@media (max-height: 450px) and (orientation: landscape) {
+    .key {
+        height: 28px;
+        font-size: 0.75rem;
+    }
+
+    .key.backspace::after {
+        font-size: 1.2rem;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .key {
+        /* Better touch feedback */
+        transition: opacity 0.1s ease, transform 0.1s ease;
+    }
+
+    .key:active {
+        opacity: 0.7;
+    }
+
+    /* Prevent double-tap zoom */
+    .keyboard {
+        touch-action: manipulation;
+    }
+
+    .keyboard-tab {
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 }
