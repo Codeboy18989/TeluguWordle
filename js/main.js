@@ -58,11 +58,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     function setupKeyboardToggle() {
         // Wait for keyboard to be initialized
         setTimeout(() => {
-            const keyboardElement = document.querySelector('.keyboard');
+            const keyboardContainer = document.getElementById('keyboard-container');
+            const keyboardSections = document.querySelectorAll('.keyboard-section');
             const toggleButton = document.getElementById('toggle-keyboard');
 
-            if (!keyboardElement || !toggleButton) {
-                console.warn('Keyboard or toggle button not found');
+            if (!keyboardSections.length || !toggleButton || !keyboardContainer) {
+                console.warn('Keyboard elements not found');
                 return;
             }
 
@@ -76,12 +77,22 @@ document.addEventListener('DOMContentLoaded', async function() {
                 keyboardVisible = !keyboardVisible;
 
                 if (keyboardVisible) {
-                    keyboardElement.style.display = 'flex';
+                    // Show the active section
+                    keyboardSections.forEach(section => {
+                        if (section.classList.contains('active')) {
+                            section.style.display = 'block';
+                        }
+                    });
+                    keyboardContainer.classList.remove('keyboard-minimized');
                     toggleButton.classList.remove('hidden-state');
                     toggleButton.innerHTML = '▼ Hide';
                     toggleButton.setAttribute('aria-label', 'Hide Keyboard');
                 } else {
-                    keyboardElement.style.display = 'none';
+                    // Hide all sections but keep tabs visible
+                    keyboardSections.forEach(section => {
+                        section.style.display = 'none';
+                    });
+                    keyboardContainer.classList.add('keyboard-minimized');
                     toggleButton.classList.add('hidden-state');
                     toggleButton.innerHTML = '▲ Show';
                     toggleButton.setAttribute('aria-label', 'Show Keyboard');

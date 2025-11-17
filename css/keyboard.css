@@ -13,6 +13,12 @@
     z-index: 100;
     padding: 5px 10px 10px;
     border-radius: 15px 15px 0 0;
+    transition: padding 0.3s ease;
+}
+
+/* When keyboard is minimized, reduce padding */
+#keyboard-container.keyboard-minimized {
+    padding: 5px 10px 8px;
 }
 
 .keyboard {
