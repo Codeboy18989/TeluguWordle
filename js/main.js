@@ -56,52 +56,49 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Set up keyboard toggle functionality
     function setupKeyboardToggle() {
-        const keyboardContainer = document.getElementById('keyboard-container');
-        const toggleButton = document.getElementById('toggle-keyboard');
-        const toggleText = toggleButton.querySelector('.toggle-text');
+        // Wait for keyboard to be initialized
+        setTimeout(() => {
+            const keyboardElement = document.querySelector('.keyboard');
+            const toggleButton = document.getElementById('toggle-keyboard');
 
-        // Initialize keyboard state - visible by default
-        let keyboardVisible = true;
-
-        // Toggle keyboard visibility when button is clicked
-        toggleButton.addEventListener('click', function() {
-            keyboardVisible = !keyboardVisible;
-
-            if (keyboardVisible) {
-                keyboardContainer.style.display = 'block';
-                toggleButton.classList.remove('keyboard-hidden');
-                toggleText.textContent = 'Hide Keyboard';
-            } else {
-                keyboardContainer.style.display = 'none';
-                toggleButton.classList.add('keyboard-hidden');
-                toggleText.textContent = 'Keyboard';
+            if (!keyboardElement || !toggleButton) {
+                console.warn('Keyboard or toggle button not found');
+                return;
             }
-        });
 
-        // Auto-hide keyboard on small screens in portrait orientation
-        function checkOrientation() {
-            // Only apply auto-hide on very small screens in portrait mode
-            if (window.innerHeight < 600 && window.innerWidth < window.innerHeight) {
+            // Initialize keyboard state - visible by default
+            let keyboardVisible = true;
+
+            // Toggle keyboard visibility when button is clicked
+            toggleButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                keyboardVisible = !keyboardVisible;
+
                 if (keyboardVisible) {
-                    toggleButton.click(); // Auto-hide on first load for small screens
+                    keyboardElement.style.display = 'flex';
+                    toggleButton.classList.remove('hidden-state');
+                    toggleButton.innerHTML = '▼ Hide';
+                    toggleButton.setAttribute('aria-label', 'Hide Keyboard');
+                } else {
+                    keyboardElement.style.display = 'none';
+                    toggleButton.classList.add('hidden-state');
+                    toggleButton.innerHTML = '▲ Show';
+                    toggleButton.setAttribute('aria-label', 'Show Keyboard');
                 }
-            }
-        }
+            });
 
-        // Check on page load and resize
-        checkOrientation();
-        window.addEventListener('resize', checkOrientation);
+            console.log('✅ Keyboard toggle initialized');
+        }, 500);
     }
 
     // Load and display hint from admin
     function loadHint() {
         const HINT_KEY = 'telugu_wordle_hint';
-        const hintContainer = document.getElementById('hint-container');
-        const hintText = document.getElementById('hint-text');
+        const hintElement = document.getElementById('hint-text');
 
         console.log('🔍 [HINT DEBUG] Starting hint load...');
-        console.log('🔍 [HINT DEBUG] Container element:', hintContainer);
-        console.log('🔍 [HINT DEBUG] Text element:', hintText);
+        console.log('🔍 [HINT DEBUG] Hint element:', hintElement);
 
         try {
             const hintData = localStorage.getItem(HINT_KEY);
@@ -118,31 +115,22 @@ document.addEventListener('DOMContentLoaded', async function() {
 
                 // Check if hint is for today's word
                 if (hint.date === today && hint.text && hint.text.trim()) {
-                    hintText.textContent = hint.text;
-                    hintContainer.style.display = 'block';
-                    hintContainer.style.visibility = 'visible';
-                    hintContainer.style.opacity = '1';
+                    hintElement.textContent = hint.text;
+                    hintElement.style.display = 'block';
 
                     console.log('✅ [HINT DEBUG] Hint displayed successfully!');
                     console.log('✅ [HINT DEBUG] Hint text:', hint.text);
-                    console.log('✅ [HINT DEBUG] Container display:', hintContainer.style.display);
-                    console.log('✅ [HINT DEBUG] Container visibility:', hintContainer.style.visibility);
-
-                    // Scroll hint into view on mobile
-                    setTimeout(() => {
-                        hintContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 300);
                 } else {
-                    hintContainer.style.display = 'none';
+                    hintElement.style.display = 'none';
                     console.log('ℹ️ [HINT DEBUG] Hint hidden (expired or empty)');
                 }
             } else {
-                hintContainer.style.display = 'none';
+                hintElement.style.display = 'none';
                 console.log('ℹ️ [HINT DEBUG] No hint data found in localStorage');
             }
         } catch (e) {
             console.error('❌ [HINT DEBUG] Error loading hint:', e);
-            hintContainer.style.display = 'none';
+            hintElement.style.display = 'none';
         }
     }
     

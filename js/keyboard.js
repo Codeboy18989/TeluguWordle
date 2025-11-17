@@ -84,7 +84,7 @@ const TeluguKeyboard = (function() {
         // Create tabs for switching between keyboard sections
         const tabsContainer = document.createElement('div');
         tabsContainer.className = 'keyboard-tabs';
-        
+
         // Add tabs
         const tabs = {
             'consonants': 'హల్లులు (Consonants)',
@@ -92,7 +92,7 @@ const TeluguKeyboard = (function() {
             'vowelDiacritics': 'గుణింతాలు (Signs)',
             'conjuncts': 'యుక్తాలు (Conjuncts)'
         };
-        
+
         for (const [tabId, tabLabel] of Object.entries(tabs)) {
             const tab = document.createElement('button');
             tab.className = `keyboard-tab ${tabId === currentTab ? 'active' : ''}`;
@@ -100,7 +100,15 @@ const TeluguKeyboard = (function() {
             tab.textContent = tabLabel;
             tabsContainer.appendChild(tab);
         }
-        
+
+        // Add keyboard hide/show toggle button to tabs area
+        const toggleButton = document.createElement('button');
+        toggleButton.id = 'toggle-keyboard';
+        toggleButton.className = 'keyboard-tab keyboard-toggle';
+        toggleButton.setAttribute('aria-label', 'Hide Keyboard');
+        toggleButton.innerHTML = '▼ Hide';
+        tabsContainer.appendChild(toggleButton);
+
         keyboardElement.appendChild(tabsContainer);
         
         // Create sections for each keyboard layout
