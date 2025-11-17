@@ -105,6 +105,22 @@
     border-bottom: 2px solid var(--color-text);
 }
 
+/* Keyboard toggle button - hide/show keyboard */
+.keyboard-toggle {
+    margin-left: auto;
+    color: #667eea;
+    font-weight: 600;
+    opacity: 1;
+}
+
+.keyboard-toggle:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+}
+
+.keyboard-toggle.hidden-state {
+    color: #00b894;
+}
+
 /* Keyboard layout sections */
 .keyboard-section {
     display: none;

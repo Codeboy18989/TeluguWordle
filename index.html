@@ -25,7 +25,11 @@
 <body>
     <div class="container">
         <header>
-            <h1>తెలుగు Wordle</h1>
+            <div class="header-title-section">
+                <h1>తెలుగు Wordle</h1>
+                <!-- Hint displayed as simple subtitle below title -->
+                <div id="hint-text" class="hint-subtitle" style="display: none;"></div>
+            </div>
             <div class="header-right">
                 <button id="help-button" aria-label="Help">?</button>
                 <button id="stats-button" aria-label="Statistics">📊</button>
@@ -34,14 +38,6 @@
         </header>
 
         <main>
-            <!-- Admin Hint Display -->
-            <div id="hint-container" class="hint-container" style="display: none;">
-                <div class="hint-content">
-                    <span class="hint-icon">💡</span>
-                    <span id="hint-text" class="hint-text"></span>
-                </div>
-            </div>
-
             <!-- Game board - 6 rows with 5 tiles each for guesses -->
             <div id="game-board">
                 <!-- Rows will be dynamically generated -->
@@ -130,11 +126,6 @@
                 </div>
             </div>
         </div>
-        <!-- Keyboard toggle button -->
-        <button id="toggle-keyboard" class="keyboard-toggle-btn" aria-label="Toggle Keyboard">
-            <span class="keyboard-icon">⌨️</span>
-            <span class="toggle-text">Hide Keyboard</span>
-        </button>
     </div>
     <button id="debug-reset"
         style="position:fixed; top:70px; left:10px; z-index:999;
