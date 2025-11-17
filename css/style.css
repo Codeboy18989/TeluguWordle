@@ -452,7 +452,7 @@ main {
 .hint-container {
     width: calc(100% - 10px);
     max-width: 500px;
-    margin: 0 auto 12px auto;
+    margin: 10px auto 12px auto;
     padding: 10px 14px;
     background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
     border-radius: 8px;
@@ -460,6 +460,9 @@ main {
     animation: slideDown 0.3s ease-out;
     z-index: 10;
     position: relative;
+    visibility: visible;
+    opacity: 1;
+    scroll-margin-top: 60px;
 }
 
 .hint-content {
@@ -494,22 +497,22 @@ main {
 /* Keyboard Toggle Button */
 .keyboard-toggle-btn {
     position: fixed;
-    bottom: 220px;
     left: 50%;
+    bottom: 20px;
     transform: translateX(-50%);
-    z-index: 1000;
+    z-index: 99;
 
     display: flex;
     align-items: center;
     gap: 6px;
 
-    padding: 8px 14px;
+    padding: 6px 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
     border-radius: 20px;
 
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
 
@@ -523,21 +526,20 @@ main {
 }
 
 .keyboard-toggle-btn:active {
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(-50%) scale(0.98);
 }
 
 .keyboard-icon {
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .toggle-text {
-    font-size: 12px;
+    font-size: 11px;
 }
 
-/* When keyboard is hidden, change button appearance and position */
+/* When keyboard is hidden, change button appearance */
 .keyboard-toggle-btn.keyboard-hidden {
     background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
-    bottom: 20px;
 }
 
 .keyboard-toggle-btn.keyboard-hidden .toggle-text::before {
@@ -638,26 +640,30 @@ body {
     }
 
     .keyboard-toggle-btn {
-        bottom: 200px;
+        bottom: 20px;
         padding: 7px 12px;
         font-size: 11px;
     }
 
     .keyboard-toggle-btn.keyboard-hidden {
-        bottom: 15px;
+        bottom: 20px;
     }
 
     .hint-container {
-        margin: 0 5px 10px 5px;
-        padding: 8px 12px;
+        margin: 8px 5px 10px 5px;
+        padding: 10px 12px;
+        width: calc(100% - 20px);
+        box-sizing: border-box;
+        min-height: 40px;
     }
 
     .hint-text {
-        font-size: 12px;
+        font-size: 13px;
+        line-height: 1.5;
     }
 
     .hint-icon {
-        font-size: 16px;
+        font-size: 18px;
     }
 
     /* Modal improvements */

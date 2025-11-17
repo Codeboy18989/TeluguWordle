@@ -99,25 +99,49 @@ document.addEventListener('DOMContentLoaded', async function() {
         const hintContainer = document.getElementById('hint-container');
         const hintText = document.getElementById('hint-text');
 
+        console.log('🔍 [HINT DEBUG] Starting hint load...');
+        console.log('🔍 [HINT DEBUG] Container element:', hintContainer);
+        console.log('🔍 [HINT DEBUG] Text element:', hintText);
+
         try {
             const hintData = localStorage.getItem(HINT_KEY);
+            console.log('🔍 [HINT DEBUG] Raw hint data from localStorage:', hintData);
+
             if (hintData) {
                 const hint = JSON.parse(hintData);
                 const today = new Date().toISOString().split('T')[0];
+
+                console.log('🔍 [HINT DEBUG] Parsed hint:', hint);
+                console.log('🔍 [HINT DEBUG] Today\'s date:', today);
+                console.log('🔍 [HINT DEBUG] Hint date:', hint.date);
+                console.log('🔍 [HINT DEBUG] Dates match:', hint.date === today);
 
                 // Check if hint is for today's word
                 if (hint.date === today && hint.text && hint.text.trim()) {
                     hintText.textContent = hint.text;
                     hintContainer.style.display = 'block';
-                    console.log('Loaded hint:', hint.text);
+                    hintContainer.style.visibility = 'visible';
+                    hintContainer.style.opacity = '1';
+
+                    console.log('✅ [HINT DEBUG] Hint displayed successfully!');
+                    console.log('✅ [HINT DEBUG] Hint text:', hint.text);
+                    console.log('✅ [HINT DEBUG] Container display:', hintContainer.style.display);
+                    console.log('✅ [HINT DEBUG] Container visibility:', hintContainer.style.visibility);
+
+                    // Scroll hint into view on mobile
+                    setTimeout(() => {
+                        hintContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 300);
                 } else {
                     hintContainer.style.display = 'none';
+                    console.log('ℹ️ [HINT DEBUG] Hint hidden (expired or empty)');
                 }
             } else {
                 hintContainer.style.display = 'none';
+                console.log('ℹ️ [HINT DEBUG] No hint data found in localStorage');
             }
         } catch (e) {
-            console.error('Error loading hint:', e);
+            console.error('❌ [HINT DEBUG] Error loading hint:', e);
             hintContainer.style.display = 'none';
         }
     }
