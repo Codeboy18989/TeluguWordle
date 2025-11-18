@@ -201,6 +201,9 @@ const TeluguKeyboard = (function() {
         // Tab switching
         const tabs = keyboardElement.querySelectorAll('.keyboard-tab');
         tabs.forEach(tab => {
+            // Skip the toggle button - it has its own handler in main.js
+            if (!tab.dataset.tab) return;
+
             tab.addEventListener('click', () => {
                 showTab(tab.dataset.tab);
             });
