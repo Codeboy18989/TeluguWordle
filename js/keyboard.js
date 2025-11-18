@@ -256,19 +256,22 @@ const TeluguKeyboard = (function() {
     function showTab(tabId) {
         // Update current tab
         currentTab = tabId;
-        
+
         // Update tab styling
         const tabs = keyboardElement.querySelectorAll('.keyboard-tab');
         tabs.forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabId);
         });
-        
+
         // Show/hide sections
         const sections = keyboardElement.querySelectorAll('.keyboard-section');
         sections.forEach(section => {
-            section.classList.toggle('active', section.dataset.section === tabId);
+            const isActive = section.dataset.section === tabId;
+            section.classList.toggle('active', isActive);
+            // Explicitly set display style to override any inline styles from toggle button
+            section.style.display = isActive ? 'block' : 'none';
         });
-        
+
         // Hide combination panel when switching tabs
         combinationPanel.style.display = 'none';
     }
