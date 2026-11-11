@@ -1,9 +1,9 @@
 /* Telugu Keyboard Styles */
 #keyboard-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    /* Part of the normal page flow (not an overlay), so the game board
+       always gets the space above it and is never covered */
+    position: relative;
+    flex-shrink: 0;
     width: 100%;
     max-width: 600px;
     margin: 0 auto;
@@ -12,6 +12,7 @@
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     z-index: 100;
     padding: 5px 10px 10px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
     border-radius: 15px 15px 0 0;
     transition: padding 0.3s ease;
 }
