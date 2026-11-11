@@ -28,12 +28,24 @@ const TeluguWordle = (function() {
         revealingRow: false,     // Flag to track revealing animation
         currentRow: 0,           // Current row (attempt)
         gameBoard: null,         // Reference to game board element
-        initialized: false       // Flag to track initialization
+        initialized: false,      // Flag to track initialization
+        date: '',                // Puzzle date (YYYY-MM-DD, player's local day)
+        hint: '',                // Today's hint (may be empty)
+        hintRevealed: false      // Whether the player has opened the hint
     };
+
+    // Today's puzzle, provided by DailyChallenge.load() via init()
+    let daily = null;
+    let countdownTimer = null;
     
-    // Initialize the game
-    function init() {
+    /**
+     * Initialize the game
+     * @param {{date: string, word: string, hint: string}} todaysPuzzle - from DailyChallenge.load()
+     */
+    function init(todaysPuzzle) {
         if (state.initialized) return;
+
+        daily = todaysPuzzle;
         
         // Get DOM references
         state.gameBoard = document.getElementById('game-board');
@@ -47,21 +59,41 @@ const TeluguWordle = (function() {
             handleKeyInput
         );
         
-        // Check for saved game state
+        // Resume today's game if there is one; otherwise start today's puzzle.
+        // A saved game from an earlier day is discarded, so a new day always
+        // brings a new word.
         const savedState = GameStorage.loadGameState();
-        if (savedState) {
-            // Restore saved game
+        if (shouldResume(savedState)) {
             restoreGameState(savedState);
         } else {
-            // Start a new game
             startNewGame();
         }
         
         // Set initialized flag
         state.initialized = true;
         
-        // Set up event listeners for modals
+        // Set up event listeners for modals and the hint button
         setupModalListeners();
+        setupHint();
+
+        // Already finished today's puzzle? Show the result and countdown
+        if (state.gameStatus !== 'playing') {
+            setTimeout(showGameResult, 400);
+        }
+    }
+
+    /**
+     * Should a saved game be resumed instead of starting today's puzzle?
+     * Yes if it is from today. If the admin changed today's word after the
+     * player loaded it, an untouched game switches to the new word, but a game
+     * already in progress is kept so nobody loses their guesses.
+     */
+    function shouldResume(savedState) {
+        if (!savedState || !savedState.targetWord) return false;
+        if (savedState.date !== daily.date) return false;
+        const sameWord = savedState.targetWord === daily.word;
+        const hasProgress = savedState.guesses && savedState.guesses.length > 0;
+        return sameWord || hasProgress;
     }
     
     /**
@@ -75,14 +107,17 @@ const TeluguWordle = (function() {
     }
     
     /**
-     * Start a new game with a random target word
+     * Start today's puzzle
      */
     function startNewGame() {
         // Clear the board
         clearBoard();
 
-        // Select a random target word
-        state.targetWord = TeluguWordList.getRandomWord();
+        // Today's word (same for every player)
+        state.date = daily.date;
+        state.hint = daily.hint;
+        state.hintRevealed = false;
+        state.targetWord = daily.word;
         state.targetWordParts = TeluguUtils.splitTeluguWord(state.targetWord);
 
         // DIAGNOSTIC LOGGING
@@ -162,6 +197,10 @@ const TeluguWordle = (function() {
         state.currentGuess = savedState.currentGuess || '';
         state.gameStatus = savedState.gameStatus;
         state.currentRow = savedState.currentRow;
+        state.date = savedState.date;
+        state.hintRevealed = !!savedState.hintRevealed;
+        // Hint always comes from today's puzzle, so admin edits show up
+        state.hint = daily.hint;
         
         console.log('Restoring game state with word:', state.targetWord);
         console.log('Word parts:', state.targetWordParts);
@@ -524,7 +563,7 @@ const TeluguWordle = (function() {
         
         if (isWin) {
             state.gameStatus = 'won';
-            GameStorage.updateStatistics(true, state.currentRow + 1);
+            GameStorage.updateStatistics(true, state.currentRow + 1, state.date);
             showNotification('అభినందనలు! (Congratulations!)');
             animateWin();
             console.log('Game won at row:', state.currentRow + 1);
@@ -535,7 +574,7 @@ const TeluguWordle = (function() {
             
             if (state.currentRow >= CONFIG.MAX_ATTEMPTS) {
                 state.gameStatus = 'lost';
-                GameStorage.updateStatistics(false);
+                GameStorage.updateStatistics(false, null, state.date);
                 console.log('Game lost, max attempts reached');
             }
         }
@@ -571,7 +610,9 @@ const TeluguWordle = (function() {
             currentGuess: state.currentGuess,
             gameStatus: state.gameStatus,
             currentRow: state.currentRow,
-            wordLength: state.targetWordParts.length // Save word length for proper UI restoration
+            wordLength: state.targetWordParts.length, // Save word length for proper UI restoration
+            date: state.date,
+            hintRevealed: state.hintRevealed
         };
         
         GameStorage.saveGameState(gameState);
@@ -678,9 +719,90 @@ const TeluguWordle = (function() {
             </div>
         `;
         
+        // Countdown to tomorrow's word (replaces "Play Again": one puzzle per day)
+        startNextWordCountdown();
+
         // Show modal
         modal.classList.remove('hidden');
         modal.classList.add('show');
+    }
+
+    /**
+     * Show a live HH:MM:SS countdown to the next local midnight.
+     * When it reaches zero the page reloads to fetch the new day's word.
+     */
+    function startNextWordCountdown() {
+        const countdownElement = document.getElementById('next-word-countdown');
+        if (!countdownElement) return;
+
+        function format(ms) {
+            const total = Math.max(0, Math.floor(ms / 1000));
+            const h = String(Math.floor(total / 3600)).padStart(2, '0');
+            const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+            const sec = String(total % 60).padStart(2, '0');
+            return `${h}:${m}:${sec}`;
+        }
+
+        function tick() {
+            const remaining = DailyChallenge.msUntilNextDay();
+            countdownElement.textContent = format(remaining);
+            // A new day has started (or the device clock moved past the puzzle date)
+            if (remaining <= 1000 || DailyChallenge.getDateKey() !== state.date) {
+                clearInterval(countdownTimer);
+                setTimeout(() => window.location.reload(), 1000);
+            }
+        }
+
+        clearInterval(countdownTimer);
+        tick();
+        countdownTimer = setInterval(tick, 1000);
+    }
+
+    // ------------------------------------------------------------------------
+    // HINT
+    // The hint is hidden until the player taps the 💡 button, so it stays
+    // optional. A dot on the button means a hint is available today.
+    // ------------------------------------------------------------------------
+
+    function setupHint() {
+        const hintButton = document.getElementById('hint-button');
+        if (!hintButton) return;
+
+        hintButton.addEventListener('click', () => {
+            if (!state.hint) {
+                showNotification('ఈరోజు సూచన లేదు (No hint today)');
+                return;
+            }
+            state.hintRevealed = !state.hintRevealed;
+            saveGameState();
+            renderHint();
+        });
+
+        renderHint();
+    }
+
+    function renderHint() {
+        const hintButton = document.getElementById('hint-button');
+        const hintText = document.getElementById('hint-text');
+        if (!hintButton || !hintText) return;
+
+        const hasHint = !!state.hint;
+        hintButton.classList.toggle('has-hint', hasHint && !state.hintRevealed);
+        hintButton.classList.toggle('no-hint', !hasHint);
+        hintButton.setAttribute('aria-label', hasHint
+            ? (state.hintRevealed ? 'Hide hint' : 'Show hint')
+            : 'No hint today');
+        hintButton.title = hasHint
+            ? (state.hintRevealed ? 'సూచన దాచు (Hide hint)' : 'సూచన చూడు (Show hint)')
+            : 'ఈరోజు సూచన లేదు (No hint today)';
+
+        if (hasHint && state.hintRevealed) {
+            hintText.textContent = state.hint;
+            hintText.style.display = 'block';
+        } else {
+            hintText.textContent = '';
+            hintText.style.display = 'none';
+        }
     }
     
     /**
@@ -708,16 +830,6 @@ const TeluguWordle = (function() {
                     modal.classList.add('hidden');
                 }, 300);
             });
-        });
-        
-        // Play again button
-        document.getElementById('play-again-button').addEventListener('click', () => {
-            const modal = document.getElementById('game-result-modal');
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                startNewGame();
-            }, 300);
         });
     }
     
@@ -776,7 +888,6 @@ const TeluguWordle = (function() {
     // Public API
     return {
         init,
-        startNewGame,
         handleKeyInput,
         CONFIG
     };

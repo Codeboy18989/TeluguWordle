@@ -18,42 +18,57 @@ This guide will help you set up Firebase Firestore for your Telugu Wordle word d
 4. Select a Cloud Firestore location (choose closest to your users, e.g., `asia-south1` for India)
 5. Click "Enable"
 
-## Step 3: Set Up Security Rules
+## Step 3: Admin Sign-in, Security Rules & Daily Words
 
-In Firestore > Rules tab, replace with:
+The daily word and hint live in Firestore (`dailyWords/{YYYY-MM-DD}`), so every
+player gets the same puzzle. Only admins can change them, which is enforced by
+Firestore security rules, not just by hiding buttons.
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
+### 3a. Turn on Google sign-in
+1. Firebase Console → **Authentication** → **Get started**
+2. **Sign-in method** tab → **Google** → Enable → Save
+3. **Settings** tab → **Authorized domains** → make sure the domain you host
+   the game on is listed (e.g. `yourname.github.io`). `localhost` is there by default.
 
-    // Words collection - read by anyone, write only by authenticated admin
-    match /words/{wordId} {
-      allow read: if true;  // Anyone can read words
-      allow write: if false;  // Only via admin panel (using Firebase Admin SDK would be better)
-      // For now, manually set write permissions or use Firebase Console
-    }
+### 3b. Publish the security rules
+1. Firebase Console → **Firestore Database** → **Rules**
+2. Replace everything with the contents of [`firestore.rules`](firestore.rules)
+3. Click **Publish**
 
-    // Daily words collection
-    match /dailyWords/{date} {
-      allow read: if true;
-      allow write: if false;
-    }
+What the rules do:
+| Collection | Players | Admins |
+|---|---|---|
+| `words` | read | read + write |
+| `dailyWords` | read **one day at a time**, only once that day has started (no peeking at future words) | read, list, write |
+| `admins` | can only check their own entry | same (edit admins in the Console) |
 
-    // Stats collection
-    match /stats/{document=**} {
-      allow read: if true;
-      allow write: if false;
-    }
-  }
-}
+### 3c. Make yourself an admin
+1. Open `admin.html` and click **Sign in with Google**
+2. The page says "Not an admin yet" and shows your **UID**. Click **Copy UID**
+3. Firebase Console → Firestore → **Start collection** → Collection ID: `admins`
+4. **Document ID**: paste your UID. Add any field, e.g. `name` = `Admin`. Save
+5. Refresh `admin.html`. You now see the admin panel
+
+### 3d. Schedule words
+In the admin panel, choose a date and enter a word, a hint, or both:
+- **Word + hint**: that word is the answer for everyone that day
+- **Hint only**: players get the automatic word, plus your hint
+- **Nothing scheduled**: players get an automatic word picked from the target
+  list using the date (the same for everyone)
+
+Each entry is stored as:
+```
+dailyWords/2026-11-12
+  word:      "నాన్న"            (optional)
+  hint:      "కుటుంబం (Family)"  (optional)
+  revealAt:  timestamp          (when players may read it)
+  updatedAt: timestamp
+  updatedBy: "<admin uid>"
 ```
 
-**Important**: These rules allow READ access to everyone but NO write access via client.
-For now, you'll need to:
-- Option A: Use Firebase Console to add/edit words manually
-- Option B: Temporarily enable writes (`allow write: if true;`) then disable after adding words
-- Option C: Implement Firebase Auth (recommended for production)
+Words and hints saved by the old browser-only admin page show up in a
+"Move browser-saved words to Firestore" box the first time you sign in on that
+browser. Click **Upload to Firestore** to share them.
 
 ## Step 4: Get Your Firebase Config
 
@@ -100,6 +115,8 @@ Add these scripts BEFORE your app scripts in `index.html` and `admin.html`:
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<!-- admin.html only: -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
 <!-- Your app scripts -->
 <script src="js/firebase-config.js"></script>
@@ -124,14 +141,9 @@ Add these scripts BEFORE your app scripts in `index.html` and `admin.html`:
 
 ### Option B: Using Admin Panel Migration Script
 
-1. Temporarily enable Firestore write access:
-   ```javascript
-   match /words/{wordId} {
-     allow read, write: if true;  // TEMPORARY!
-   }
-   ```
+1. Sign in to `admin.html` as an admin (Step 3c). The rules allow admins to write words
 
-2. Open `admin.html` in browser
+2. Keep `admin.html` open
 3. Open browser console
 4. Run migration script:
 
@@ -165,14 +177,6 @@ async function migrateWordsToFirestore() {
 // Run migration
 migrateWordsToFirestore();
 ```
-
-3. After migration, DISABLE write access again:
-   ```javascript
-   match /words/{wordId} {
-     allow read: if true;
-     allow write: if false;  // Disabled again
-   }
-   ```
 
 ## Step 8: Test the Integration
 
@@ -212,10 +216,7 @@ The app implements smart caching:
 
 For production:
 
-1. **Enable Firebase Authentication**:
-   - Set up email/password auth in Firebase Console
-   - Require admin login before allowing writes
-   - Update security rules to check `request.auth`
+1. **Admin authentication**: done. Google sign-in plus the `admins` allowlist (Step 3)
 
 2. **Restrict API Key**:
    - Go to Google Cloud Console
@@ -228,7 +229,8 @@ For production:
 ## Troubleshooting
 
 ### "Permission denied" errors
-- Check Firestore security rules allow read access
+- Check the rules from `firestore.rules` are published (Step 3b)
+- In the admin panel: check your UID is in the `admins` collection (Step 3c)
 - Check Firebase config is correct
 
 ### "Firebase not initialized"
@@ -253,7 +255,7 @@ For production:
 4. ✅ Add Firebase SDK to HTML files
 5. ✅ Migrate existing words
 6. ✅ Test the integration
-7. 🔄 (Optional) Set up Firebase Authentication for secure admin access
+7. ✅ Google sign-in + security rules for admin access (Step 3)
 
 ## Support
 

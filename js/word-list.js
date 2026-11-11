@@ -859,27 +859,12 @@ const TeluguWordList = (function() {
         'వడ్రంగి', 'దర్జీ', 'వంటవాడు', 'నర్సు', 'పోలీసు', 'సైనికుడు',
         'రాజు', 'రాణి', 'మంత్రి',
     ];
-    // Add this constant for the localStorage key
-    const DAILY_WORDS_KEY = 'telugu_wordle_daily_words';
-    
-    // Replace or update your existing getRandomWord function with this:
-    function getRandomWord() {
-        // Check if there's a daily word set for today
-        const dailyWord = getTodaysWord();
-        if (dailyWord) {
-            console.log("Using admin-set daily word:", dailyWord);
-            return dailyWord;
-        }
-
-        // If no daily word set by admin, use date-based "word of the day"
-        // This ensures the same word is used throughout the day for all users
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        const wordOfDay = getWordOfDay(today);
-        console.log("Using date-based word of the day:", wordOfDay);
-        return wordOfDay;
-    }
-
-    // Generate a consistent word for a given date using a simple hash
+    /**
+     * Pick the automatic "word of the day" for a date (YYYY-MM-DD).
+     * Used when the admin hasn't scheduled a word in Firestore.
+     * It is a pure function of the date, so every player gets the same word.
+     * @param {string} dateString - Date key in YYYY-MM-DD format
+     */
     function getWordOfDay(dateString) {
         // Simple hash function to convert date string to a number
         let hash = 0;
@@ -893,21 +878,7 @@ const TeluguWordList = (function() {
         const index = Math.abs(hash) % targetWordList.length;
         return targetWordList[index];
     }
-    // Add this new function to get today's word
-    function getTodaysWord() {
-        try {
-            const dailyWordsJson = localStorage.getItem(DAILY_WORDS_KEY);
-            if (!dailyWordsJson) return null;
-            
-            const dailyWords = JSON.parse(dailyWordsJson);
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-            
-            return dailyWords[today] || null;
-        } catch (e) {
-            console.error("Error getting today's word:", e);
-            return null;
-        }
-    }
+
     // Helper function to check if a word is valid (exists in main + custom word lists)
     function isValidWord(word) {
         // Normalize the word before checking (handle any character normalization)
@@ -938,10 +909,8 @@ const TeluguWordList = (function() {
         mainWordList: baseWordList,  // Base dictionary (for admin duplicate checks)
         allWords: getAllWords(),     // Combined base + custom + Firestore (for validation)
         targetWordList,
-        getRandomWord,
         isValidWord,
         getWordCount,
-        getTodaysWord,
         getWordOfDay,
         getAllWords,  // Get combined base + custom + Firestore words
         getCustomWords,  // Get only localStorage custom words

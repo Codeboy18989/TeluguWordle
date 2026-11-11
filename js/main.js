@@ -14,17 +14,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
+    // Fetch today's puzzle (admin-set word + hint from Firestore, or the
+    // automatic word of the day) so every player gets the same word
+    const todaysPuzzle = await DailyChallenge.load();
+    console.log(`📅 Puzzle for ${todaysPuzzle.date} (${todaysPuzzle.source})`);
+
     // Initialize the game
-    TeluguWordle.init();
+    TeluguWordle.init(todaysPuzzle);
 
     // Add event listeners for physical keyboard input
     document.addEventListener('keydown', handlePhysicalKeyboard);
 
     // Setup keyboard toggle button for mobile view
     setupKeyboardToggle();
-
-    // Load and display hint
-    loadHint();
 
     // Size the tiles so the whole board fits in the space above the keyboard
     setupBoardSizing();
@@ -153,47 +155,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }, 500);
     }
 
-    // Load and display hint from admin
-    function loadHint() {
-        const HINT_KEY = 'telugu_wordle_hint';
-        const hintElement = document.getElementById('hint-text');
-
-        console.log('🔍 [HINT DEBUG] Starting hint load...');
-        console.log('🔍 [HINT DEBUG] Hint element:', hintElement);
-
-        try {
-            const hintData = localStorage.getItem(HINT_KEY);
-            console.log('🔍 [HINT DEBUG] Raw hint data from localStorage:', hintData);
-
-            if (hintData) {
-                const hint = JSON.parse(hintData);
-                const today = new Date().toISOString().split('T')[0];
-
-                console.log('🔍 [HINT DEBUG] Parsed hint:', hint);
-                console.log('🔍 [HINT DEBUG] Today\'s date:', today);
-                console.log('🔍 [HINT DEBUG] Hint date:', hint.date);
-                console.log('🔍 [HINT DEBUG] Dates match:', hint.date === today);
-
-                // Check if hint is for today's word
-                if (hint.date === today && hint.text && hint.text.trim()) {
-                    hintElement.textContent = hint.text;
-                    hintElement.style.display = 'block';
-
-                    console.log('✅ [HINT DEBUG] Hint displayed successfully!');
-                    console.log('✅ [HINT DEBUG] Hint text:', hint.text);
-                } else {
-                    hintElement.style.display = 'none';
-                    console.log('ℹ️ [HINT DEBUG] Hint hidden (expired or empty)');
-                }
-            } else {
-                hintElement.style.display = 'none';
-                console.log('ℹ️ [HINT DEBUG] No hint data found in localStorage');
-            }
-        } catch (e) {
-            console.error('❌ [HINT DEBUG] Error loading hint:', e);
-            hintElement.style.display = 'none';
-        }
-    }
     
     // Handle dark mode toggle if implemented in settings
     const darkModeToggle = document.getElementById('dark-mode-toggle');

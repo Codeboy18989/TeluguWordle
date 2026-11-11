@@ -16,7 +16,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let app, db;
+let app, db, auth = null;
 
 try {
     // Initialize Firebase App
@@ -24,6 +24,11 @@ try {
 
     // Initialize Firestore
     db = firebase.firestore();
+
+    // Firebase Auth is only loaded on the admin page (for Google sign-in)
+    if (typeof firebase.auth === 'function') {
+        auth = firebase.auth();
+    }
 
     console.log('✅ Firebase initialized successfully');
 
@@ -47,11 +52,15 @@ try {
 const FirebaseDB = {
     db: db,
     app: app,
+    auth: auth,
 
     // Collection references
     collections: {
         words: () => db ? db.collection('words') : null,
+        // dailyWords/{YYYY-MM-DD}: { word?, hint?, revealAt, updatedAt, updatedBy }
         dailyWords: () => db ? db.collection('dailyWords') : null,
+        // admins/{uid}: allowlist of accounts that may change words (see firestore.rules)
+        admins: () => db ? db.collection('admins') : null,
         stats: () => db ? db.collection('stats') : null
     },
 
