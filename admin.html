@@ -6,6 +6,13 @@
     <title>Telugu Wordle Admin</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
+        /* The game page locks scrolling (board + keyboard fit the screen);
+           the admin page is a normal scrolling page */
+        main {
+            overflow-y: auto;
+            display: block;
+        }
+
         .admin-container {
             max-width: 600px;
             margin: 0 auto;
@@ -37,6 +44,7 @@
         }
         
         input[type="text"],
+        input[type="date"],
         input[type="password"] {
             width: 100%;
             padding: 8px;
@@ -99,62 +107,71 @@
         <main>
             <!-- Login Panel (shown by default) -->
             <div id="login-panel" class="admin-panel login-panel">
-                <h2>Admin Login</h2>
-                <div class="form-group">
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" placeholder="Enter username">
-                </div>
-                <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" placeholder="Enter password">
-                </div>
-                <button id="login-button">Login</button>
+                <h2>Admin Sign-in</h2>
+                <p>Sign in with the Google account that is listed as an admin.</p>
+                <button id="login-button">Sign in with Google</button>
                 <div id="login-error" class="error-message"></div>
             </div>
+
+            <!-- Signed in, but not on the admins allowlist -->
+            <div id="not-admin-panel" class="admin-panel login-panel" style="display: none;">
+                <h2>Not an admin yet</h2>
+                <p>You are signed in as <strong id="not-admin-email"></strong>, but this account isn't allowed to change words.</p>
+                <p>To make it an admin, open the Firebase Console &rarr; Firestore &rarr; create a collection called <code>admins</code> and add a document whose <strong>Document ID</strong> is this UID (fields can be anything, e.g. <code>name</code>):</p>
+                <div class="word-display" style="font-size: 14px; word-break: break-all;" id="not-admin-uid"></div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="copy-uid-button">Copy UID</button>
+                    <button id="not-admin-logout" style="background-color: #787c7e;">Sign out</button>
+                </div>
+                <p style="margin-top: 10px;">Then refresh this page. Full steps are in <code>FIREBASE_SETUP.md</code>.</p>
+            </div>
             
-            <!-- Admin Panel (hidden until authenticated) -->
+            <!-- Admin Panel (hidden until signed in as an admin) -->
             <div id="admin-container" class="admin-container" style="display: none;">
-                <div class="admin-panel">
-                    <h2>Current Word</h2>
-                    <p>Today's word is:</p>
-                    <div id="current-word" class="word-display">Loading...</div>
-                    <p>This word will be active until midnight.</p>
-                </div>
-                
-                <div class="admin-panel">
-                    <h2>Set New Word</h2>
-                    <div class="form-group">
-                        <label for="new-word">New Word:</label>
-                        <input type="text" id="new-word" placeholder="Enter a Telugu word (5 units)">
-                    </div>
-                    <div class="form-group">
-                        <label for="word-date">Date (optional):</label>
-                        <input type="date" id="word-date">
-                    </div>
-                    <button id="set-word-button">Set Word</button>
-                    <div id="word-message" class="success-message"></div>
-                </div>
-                
-                <div class="admin-panel">
-                    <h2>Daily Hint</h2>
-                    <p>Set a hint to help players guess today's word. The hint will appear above the game board.</p>
-                    <div class="form-group">
-                        <label for="hint-input">Hint (Telugu or English):</label>
-                        <textarea id="hint-input" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="ఉదా: ఒక జంతువు (Example: An animal)"></textarea>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button id="set-hint-button">Set Hint</button>
-                        <button id="clear-hint-button" style="background-color: #e74c3c;">Clear Hint</button>
-                    </div>
-                    <div id="hint-message" class="success-message"></div>
-                    <div id="current-hint-display" style="margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 4px; display: none;">
-                        <strong>Current Hint:</strong>
-                        <p id="current-hint-text" style="margin-top: 5px; color: #555;"></p>
-                    </div>
+                <p style="text-align: right; font-size: 13px; color: #787c7e;">Signed in as <span id="signed-in-as"></span></p>
+
+                <!-- One-time upload of words saved by the old browser-only admin page -->
+                <div id="migrate-panel" class="admin-panel" style="display: none; border: 2px solid #c9b458;">
+                    <h2>Move browser-saved words to Firestore</h2>
+                    <p>This browser has <strong id="migrate-count">0</strong> daily word/hint entries saved by the old admin page. Only you could see them. Upload them so every player gets them.</p>
+                    <button id="migrate-button">Upload to Firestore</button>
+                    <div id="migrate-message" class="success-message"></div>
                 </div>
 
                 <div class="admin-panel">
-                    <h2>Word History</h2>
+                    <h2>Today's Word</h2>
+                    <p>What every player gets today:</p>
+                    <div id="current-word" class="word-display">Loading...</div>
+                    <p id="current-word-meta" style="font-size: 13px; color: #555;"></p>
+                    <p style="font-size: 13px; color: #555;">The word changes at each player's local midnight.</p>
+                </div>
+                
+                <div class="admin-panel">
+                    <h2>Schedule a Daily Word &amp; Hint</h2>
+                    <p>Pick a date, then set the word, a hint, or both. Leave the word empty to keep the automatic word and just add a hint.</p>
+                    <div class="form-group">
+                        <label for="word-date">Date:</label>
+                        <input type="date" id="word-date">
+                        <div id="entry-status" style="font-size: 13px; color: #555; margin-top: 5px;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-word">Word (optional):</label>
+                        <input type="text" id="new-word" placeholder="Enter a Telugu word (2-5 units)">
+                    </div>
+                    <div class="form-group">
+                        <label for="hint-input">Hint (optional, Telugu or English):</label>
+                        <textarea id="hint-input" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="ఉదా: ఒక జంతువు (Example: An animal)"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="set-word-button">Save for this date</button>
+                        <button id="delete-entry-button" style="background-color: #e74c3c; display: none;">Remove</button>
+                    </div>
+                    <div id="word-message" class="success-message"></div>
+                </div>
+
+                <div class="admin-panel">
+                    <h2>Schedule &amp; History</h2>
+                    <p style="font-size: 13px; color: #555;">Click an entry to edit it.</p>
                     <div id="word-history" class="word-history">
                         <p>Loading word history...</p>
                     </div>
@@ -190,7 +207,7 @@
                     <button id="clear-custom-words-button" style="background-color: #e74c3c; margin-top: 10px;">Clear All Custom Words</button>
                 </div>
 
-                <button id="logout-button">Logout</button>
+                <button id="logout-button">Sign out</button>
             </div>
         </main>
     </div>
@@ -198,6 +215,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
     <!-- Firebase config and operations -->
     <script src="js/firebase-config.js"></script>
@@ -206,6 +224,7 @@
     <!-- App scripts -->
     <script src="js/telugu-utils.js"></script>
     <script src="js/word-list.js"></script>
+    <script src="js/daily-challenge.js"></script>
     <script src="js/admin.js"></script>
 </body>
 </html>

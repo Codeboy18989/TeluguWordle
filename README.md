@@ -16,6 +16,9 @@ A web-based implementation of the popular Wordle game adapted for the Telugu lan
 - **On-screen Telugu Keyboard**: Virtual keyboard with intuitive layout for Telugu input
 - **Local Storage**: Game state and statistics are saved in browser storage
 - **Statistics Tracking**: Track games played, win percentage, and guess distribution
+- **Daily Challenge**: One word per day, the same for every player, changing at local midnight. The admin schedules words and optional hints in Firestore; if nothing is scheduled, a word is picked from the date so it's still shared. Streaks count consecutive days
+- **Daily Hint**: Tap 💡 to reveal the day's hint (a dot on the button means one is available)
+- **Admin Panel** (`admin.html`): Google sign-in; only accounts in the Firestore `admins` collection can change words (enforced by `firestore.rules`). See `FIREBASE_SETUP.md`
 
 ## Technical Details
 
@@ -48,6 +51,7 @@ The application follows a modular design pattern with clear separation of concer
 - **JavaScript**:
   - `telugu-utils.js`: Utilities for handling Telugu script
   - `word-list.js`: Dictionary of Telugu words
+  - `daily-challenge.js`: Picks today's word/hint (Firestore, with a date-based fallback)
   - `storage.js`: Local storage management
   - `keyboard.js`: Virtual keyboard implementation
   - `game.js`: Core game logic
@@ -117,7 +121,6 @@ Note: When adding words, ensure they are semantically 5 "units" in Telugu, where
 
 - Transliteration support for physical keyboard input
 - Expanded word dictionary
-- Daily challenge mode
 - Theme customization
 - More sophisticated Telugu script handling for rare conjuncts
 - Advanced statistics and sharing capabilities

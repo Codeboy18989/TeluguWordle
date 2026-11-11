@@ -137,6 +137,53 @@ header button:hover {
     background-color: var(--color-tile-border);
 }
 
+/* Hint button: a dot means "a hint is available today" */
+#hint-button {
+    position: relative;
+}
+
+#hint-button.no-hint {
+    opacity: 0.45;
+}
+
+#hint-button.has-hint::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #e67e22;
+    box-shadow: 0 0 0 2px var(--color-background);
+}
+
+/* Countdown to the next daily word (in the result modal) */
+.next-word {
+    text-align: center;
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 1px solid var(--color-tile-border);
+}
+
+.next-word-label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.next-word-countdown {
+    font-size: 32px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+    margin: 4px 0;
+}
+
+.next-word-note {
+    font-size: 12px;
+    color: #787c7e;
+}
+
 /* Main game area */
 main {
     display: flex;
