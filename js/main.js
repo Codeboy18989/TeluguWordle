@@ -25,7 +25,57 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Load and display hint
     loadHint();
-    
+
+    // Size the tiles so the whole board fits in the space above the keyboard
+    setupBoardSizing();
+
+    /**
+     * Fit the game board into the space the layout gives it.
+     * Tiles shrink when the keyboard takes more room (or the window is short)
+     * and grow back (up to 60px) when the keyboard is hidden.
+     */
+    function setupBoardSizing() {
+        const board = document.getElementById('game-board');
+        const root = document.documentElement;
+        if (!board) return;
+
+        const MAX_TILE = 60;
+        const MIN_TILE = 24;
+
+        function fitBoard() {
+            const boardStyle = getComputedStyle(board);
+            const wordLength = parseInt(getComputedStyle(root).getPropertyValue('--current-word-length'), 10) || 5;
+            const rowCount = board.querySelectorAll('.row').length || 6;
+            const gap = parseFloat(boardStyle.rowGap) || 5;
+
+            const availableHeight = board.clientHeight
+                - parseFloat(boardStyle.paddingTop) - parseFloat(boardStyle.paddingBottom);
+            const availableWidth = board.clientWidth
+                - parseFloat(boardStyle.paddingLeft) - parseFloat(boardStyle.paddingRight);
+
+            const byHeight = (availableHeight - gap * (rowCount - 1)) / rowCount;
+            const byWidth = (availableWidth - gap * (wordLength - 1)) / wordLength;
+            const size = Math.max(MIN_TILE, Math.floor(Math.min(MAX_TILE, byHeight, byWidth)));
+
+            const newValue = size + 'px';
+            if (root.style.getPropertyValue('--tile-size') !== newValue) {
+                root.style.setProperty('--tile-size', newValue);
+            }
+        }
+
+        fitBoard();
+
+        if (typeof ResizeObserver !== 'undefined') {
+            // Board area changes on window resize and when the keyboard is hidden/shown
+            new ResizeObserver(fitBoard).observe(board);
+        } else {
+            window.addEventListener('resize', fitBoard);
+        }
+
+        // Word length changes for each new word (game.js updates --current-word-length)
+        new MutationObserver(fitBoard).observe(root, { attributes: true, attributeFilter: ['style'] });
+    }
+
     // Handle physical keyboard input
     function handlePhysicalKeyboard(event) {
         // Ignore if focused on an input element

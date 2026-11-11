@@ -335,8 +335,9 @@ const TeluguKeyboard = (function() {
     function positionCombinationPanel(targetElement) {
         const rect = targetElement.getBoundingClientRect();
         
-        // Position panel above the key, considering that keyboard is now fixed
-        combinationPanel.style.position = 'absolute';
+        // Position panel above the key using viewport coordinates, so it works
+        // regardless of where the keyboard sits in the page layout
+        combinationPanel.style.position = 'fixed';
         combinationPanel.style.left = rect.left + 'px';
         combinationPanel.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
         
