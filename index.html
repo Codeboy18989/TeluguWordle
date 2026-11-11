@@ -27,10 +27,11 @@
         <header>
             <div class="header-title-section">
                 <h1>తెలుగు Wordle</h1>
-                <!-- Hint displayed as simple subtitle below title -->
-                <div id="hint-text" class="hint-subtitle" style="display: none;"></div>
+                <!-- Hint: hidden until the player taps the 💡 button -->
+                <div id="hint-text" class="hint-subtitle" style="display: none;" aria-live="polite"></div>
             </div>
             <div class="header-right">
+                <button id="hint-button" class="no-hint" aria-label="Hint">💡</button>
                 <button id="help-button" aria-label="Help">?</button>
                 <button id="stats-button" aria-label="Statistics">📊</button>
                 <button id="settings-button" aria-label="Settings">⚙️</button>
@@ -60,7 +61,11 @@
                 <p id="result-message"></p>
                 <p id="correct-word"></p>
                 <div id="result-stats"></div>
-                <button id="play-again-button">మరల ఆడండి (Play Again)</button>
+                <div class="next-word">
+                    <div class="next-word-label">తదుపరి పదం (Next word in)</div>
+                    <div id="next-word-countdown" class="next-word-countdown">--:--:--</div>
+                    <div class="next-word-note">ప్రతిరోజూ అందరికీ ఒకే పదం (Same word for everyone, every day)</div>
+                </div>
             </div>
         </div>
 
@@ -73,6 +78,8 @@
                 <h3>ఆట లక్ష్యం (Game Objective)</h3>
                 <p>6 ప్రయత్నాలలో తెలుగు పదాన్ని ఊహించండి. పదం 2-5 అక్షర విభాగాల పొడవు ఉంటుంది.</p>
                 <p><em>Guess the Telugu word in 6 tries. Words are 2-5 Telugu units long.</em></p>
+                <p>ప్రతిరోజూ ఒక కొత్త పదం - అందరికీ ఒకటే. 💡 బటన్ నొక్కితే ఆనాటి సూచన కనిపిస్తుంది.</p>
+                <p><em>A new word every day, the same for everyone. Tap 💡 to see the day's hint (when there is one).</em></p>
 
                 <h3>ఎలా ఆడాలి (How to Play)</h3>
                 <ul>
@@ -146,6 +153,7 @@
     <!-- App scripts -->
     <script src="js/telugu-utils.js"></script>
     <script src="js/word-list.js"></script>
+    <script src="js/daily-challenge.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/keyboard.js"></script>
     <script src="js/game.js"></script>

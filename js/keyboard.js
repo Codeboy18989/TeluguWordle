@@ -201,6 +201,9 @@ const TeluguKeyboard = (function() {
         // Tab switching
         const tabs = keyboardElement.querySelectorAll('.keyboard-tab');
         tabs.forEach(tab => {
+            // Skip the toggle button - it has its own handler in main.js
+            if (!tab.dataset.tab) return;
+
             tab.addEventListener('click', () => {
                 showTab(tab.dataset.tab);
             });
@@ -253,19 +256,22 @@ const TeluguKeyboard = (function() {
     function showTab(tabId) {
         // Update current tab
         currentTab = tabId;
-        
+
         // Update tab styling
         const tabs = keyboardElement.querySelectorAll('.keyboard-tab');
         tabs.forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabId);
         });
-        
+
         // Show/hide sections
         const sections = keyboardElement.querySelectorAll('.keyboard-section');
         sections.forEach(section => {
-            section.classList.toggle('active', section.dataset.section === tabId);
+            const isActive = section.dataset.section === tabId;
+            section.classList.toggle('active', isActive);
+            // Explicitly set display style to override any inline styles from toggle button
+            section.style.display = isActive ? 'block' : 'none';
         });
-        
+
         // Hide combination panel when switching tabs
         combinationPanel.style.display = 'none';
     }
@@ -329,8 +335,9 @@ const TeluguKeyboard = (function() {
     function positionCombinationPanel(targetElement) {
         const rect = targetElement.getBoundingClientRect();
         
-        // Position panel above the key, considering that keyboard is now fixed
-        combinationPanel.style.position = 'absolute';
+        // Position panel above the key using viewport coordinates, so it works
+        // regardless of where the keyboard sits in the page layout
+        combinationPanel.style.position = 'fixed';
         combinationPanel.style.left = rect.left + 'px';
         combinationPanel.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
         

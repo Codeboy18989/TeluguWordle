@@ -24,7 +24,8 @@ const GameStorage = (function() {
             5: 0,
             6: 0
         },
-        lastCompleted: null
+        lastCompleted: null,
+        lastPlayedDate: null
     };
     
     // Default settings object
@@ -92,22 +93,36 @@ const GameStorage = (function() {
     }
     
     /**
-     * Update the game statistics after completing a game
+     * Update the game statistics after completing a daily game
      * @param {boolean} won - Whether the game was won
      * @param {number} attempts - Number of attempts taken (if won)
+     * @param {string} [dateKey] - The puzzle's date (YYYY-MM-DD). Each date is
+     *   counted once, and a streak only continues on consecutive days.
      */
-    function updateStatistics(won, attempts = null) {
+    function updateStatistics(won, attempts = null, dateKey = null) {
         try {
             const stats = getStatistics();
-            
+
+            // Never count the same day's puzzle twice (e.g. after a reset)
+            if (dateKey && stats.lastPlayedDate === dateKey) {
+                return false;
+            }
+
+            // A missed day breaks the streak
+            const playedYesterday = dateKey && typeof DailyChallenge !== 'undefined' &&
+                stats.lastPlayedDate === DailyChallenge.previousDateKey(dateKey);
+            if (dateKey && stats.lastPlayedDate && !playedYesterday) {
+                stats.currentStreak = 0;
+            }
+
             // Update basic stats
             stats.gamesPlayed++;
-            
+
             if (won) {
                 stats.gamesWon++;
                 stats.currentStreak++;
                 stats.maxStreak = Math.max(stats.maxStreak, stats.currentStreak);
-                
+
                 // Update guess distribution
                 if (attempts >= 1 && attempts <= 6) {
                     stats.guessDistribution[attempts]++;
@@ -115,9 +130,10 @@ const GameStorage = (function() {
             } else {
                 stats.currentStreak = 0;
             }
-            
+
             stats.lastCompleted = new Date().toISOString();
-            
+            if (dateKey) stats.lastPlayedDate = dateKey;
+
             // Save updated stats
             localStorage.setItem(STATISTICS_KEY, JSON.stringify(stats));
             return true;
@@ -126,7 +142,7 @@ const GameStorage = (function() {
             return false;
         }
     }
-    
+
     /**
      * Get the win percentage from the statistics
      * @returns {number} Win percentage (0-100)

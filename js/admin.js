@@ -1,6 +1,10 @@
- /**
+/**
  * admin.js
  * Admin panel functionality for Telugu Wordle
+ *
+ * Sign-in uses Firebase Authentication (Google). Only accounts listed in the
+ * Firestore "admins" collection can change words; this is enforced by the
+ * Firestore security rules (firestore.rules), not just by this page.
  */
 
 (function() {
@@ -9,59 +13,43 @@
     const adminContainer = document.getElementById('admin-container');
     const loginButton = document.getElementById('login-button');
     const logoutButton = document.getElementById('logout-button');
-    const usernameInput = document.getElementById('username');
-    const passwordInput = document.getElementById('password');
     const loginError = document.getElementById('login-error');
+    const notAdminPanel = document.getElementById('not-admin-panel');
     const currentWordDisplay = document.getElementById('current-word');
+    const currentWordMeta = document.getElementById('current-word-meta');
     const newWordInput = document.getElementById('new-word');
     const wordDateInput = document.getElementById('word-date');
+    const hintInput = document.getElementById('hint-input');
     const setWordButton = document.getElementById('set-word-button');
+    const deleteEntryButton = document.getElementById('delete-entry-button');
     const wordMessage = document.getElementById('word-message');
+    const entryStatus = document.getElementById('entry-status');
     const wordHistory = document.getElementById('word-history');
-    
-    // ============================================================================
-    // WARNING: INSECURE CLIENT-SIDE AUTHENTICATION
-    // ============================================================================
-    // This is a client-side only authentication system for demonstration purposes.
-    // It provides NO REAL SECURITY since anyone can view the source code!
-    //
-    // For production use, you should:
-    // 1. Implement proper server-side authentication
-    // 2. Use secure password hashing (bcrypt, argon2, etc.)
-    // 3. Implement HTTPS and secure session management
-    // 4. Add CSRF protection
-    // 5. Consider OAuth or other proper authentication mechanisms
-    //
-    // This current implementation is ONLY suitable for:
-    // - Personal/private use where code inspection isn't a concern
-    // - Demonstration/educational purposes
-    // - Development/testing environments
-    // ============================================================================
 
-    // CHANGE THESE CREDENTIALS if using this code!
-    // Anyone who can view the source code can see these values!
-    const ADMIN_USERNAME = 'admin';
-    const ADMIN_PASSWORD = 'telugu123';
-    
-    // Local storage keys
-    const AUTH_TOKEN_KEY = 'telugu_wordle_auth';
-    const DAILY_WORDS_KEY = 'telugu_wordle_daily_words';
+    // Keys used by the old browser-only version (migrated to Firestore once)
+    const LEGACY_DAILY_WORDS_KEY = 'telugu_wordle_daily_words';
+    const LEGACY_HINT_KEY = 'telugu_wordle_hint';
+    const LEGACY_AUTH_KEY = 'telugu_wordle_auth';
     const CUSTOM_WORDS_KEY = 'telugu_wordle_custom_words';
-    const HINT_KEY = 'telugu_wordle_hint';
-    
+
+    let currentUser = null;
+
     // Initialize
     function init() {
-        // Set up event listeners
+        // Old password login is gone; clear its leftover flag
+        localStorage.removeItem(LEGACY_AUTH_KEY);
+
         loginButton.addEventListener('click', handleLogin);
         logoutButton.addEventListener('click', handleLogout);
-        setWordButton.addEventListener('click', handleSetWord);
-
-        // Hint management listeners
-        const setHintButton = document.getElementById('set-hint-button');
-        const clearHintButton = document.getElementById('clear-hint-button');
-
-        if (setHintButton) setHintButton.addEventListener('click', handleSetHint);
-        if (clearHintButton) clearHintButton.addEventListener('click', handleClearHint);
+        document.getElementById('not-admin-logout').addEventListener('click', handleLogout);
+        setWordButton.addEventListener('click', handleSaveEntry);
+        deleteEntryButton.addEventListener('click', handleDeleteEntry);
+        wordDateInput.addEventListener('change', loadSelectedEntry);
+        document.getElementById('migrate-button').addEventListener('click', handleMigrateLegacy);
+        document.getElementById('copy-uid-button').addEventListener('click', () => {
+            navigator.clipboard.writeText(currentUser ? currentUser.uid : '');
+            document.getElementById('copy-uid-button').textContent = 'Copied!';
+        });
 
         // Word management listeners
         const addManualWordButton = document.getElementById('add-manual-word-button');
@@ -72,275 +60,330 @@
         if (addBulkWordsButton) addBulkWordsButton.addEventListener('click', handleAddBulkWords);
         if (clearCustomWordsButton) clearCustomWordsButton.addEventListener('click', handleClearCustomWords);
 
-        // Set default date to tomorrow
+        // Default the date picker to tomorrow (local date)
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        wordDateInput.valueAsDate = tomorrow;
+        wordDateInput.value = DailyChallenge.getDateKey(tomorrow);
 
-        // Check if already logged in
-        checkAuthStatus();
+        if (!FirebaseDB.isInitialized() || !FirebaseDB.auth) {
+            showLoginPanel('Firebase could not be loaded. Check your internet connection and refresh.');
+            loginButton.disabled = true;
+            return;
+        }
+
+        // React to sign-in / sign-out (also restores the session on reload)
+        FirebaseDB.auth.onAuthStateChanged(handleAuthChange);
     }
-    
-    // Check authentication status
-    function checkAuthStatus() {
-        const authToken = localStorage.getItem(AUTH_TOKEN_KEY);
-        
-        if (authToken === 'authenticated') {
-            showAdminPanel();
-        } else {
-            showLoginPanel();
+
+    // ============================================================================
+    // AUTHENTICATION (Firebase Auth + admins allowlist)
+    // ============================================================================
+
+    async function handleLogin() {
+        loginError.textContent = '';
+        try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            await FirebaseDB.auth.signInWithPopup(provider);
+        } catch (error) {
+            console.error('Sign-in failed:', error);
+            loginError.textContent = error.code === 'auth/popup-closed-by-user'
+                ? 'Sign-in was cancelled.'
+                : `Sign-in failed: ${error.message}`;
         }
     }
-    
-    // Handle login attempt
-    function handleLogin() {
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value;
-        
-        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-            // Set auth token in local storage
-            localStorage.setItem(AUTH_TOKEN_KEY, 'authenticated');
-            loginError.textContent = '';
-            showAdminPanel();
-        } else {
-            loginError.textContent = 'Invalid username or password';
-            passwordInput.value = '';
-        }
-    }
-    
-    // Handle logout
+
     function handleLogout() {
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        showLoginPanel();
+        FirebaseDB.auth.signOut();
     }
-    
-    // Show admin panel, hide login
+
+    async function handleAuthChange(user) {
+        currentUser = user;
+        if (!user) {
+            showLoginPanel();
+            return;
+        }
+
+        // Is this account in the admins allowlist?
+        let isAdmin = false;
+        try {
+            const doc = await FirebaseDB.collections.admins().doc(user.uid).get();
+            isAdmin = doc.exists;
+        } catch (error) {
+            console.warn('Admin check failed (are the security rules published?):', error);
+        }
+
+        if (isAdmin) {
+            showAdminPanel();
+        } else {
+            showNotAdminPanel(user);
+        }
+    }
+
+    function showLoginPanel(message = '') {
+        loginPanel.style.display = 'block';
+        adminContainer.style.display = 'none';
+        notAdminPanel.style.display = 'none';
+        loginError.textContent = message;
+    }
+
+    // Signed in, but not on the allowlist: show the UID so it can be added
+    function showNotAdminPanel(user) {
+        loginPanel.style.display = 'none';
+        adminContainer.style.display = 'none';
+        notAdminPanel.style.display = 'block';
+        document.getElementById('not-admin-email').textContent = user.email || user.displayName || 'this account';
+        document.getElementById('not-admin-uid').textContent = user.uid;
+        document.getElementById('copy-uid-button').textContent = 'Copy UID';
+    }
+
     function showAdminPanel() {
         loginPanel.style.display = 'none';
+        notAdminPanel.style.display = 'none';
         adminContainer.style.display = 'block';
+        document.getElementById('signed-in-as').textContent = currentUser.email || currentUser.displayName || '';
 
-        // Load current word and history
         loadCurrentWord();
+        loadSelectedEntry();
         loadWordHistory();
+        checkLegacyData();
 
         // Load word management data
         updateWordCounts();
         displayCustomWords();
-
-        // Load hint data
-        loadCurrentHint();
-    }
-    
-    // Show login panel, hide admin
-    function showLoginPanel() {
-        loginPanel.style.display = 'block';
-        adminContainer.style.display = 'none';
-        
-        // Clear inputs
-        usernameInput.value = '';
-        passwordInput.value = '';
-    }
-    
-    // Load and display the current word
-    function loadCurrentWord() {
-        // Use the SAME logic as the game to get today's word
-        // This ensures admin and game always show the same word
-        const displayWord = TeluguWordList.getRandomWord();
-
-        // Split to show unit count
-        const wordParts = TeluguUtils.splitTeluguWord(displayWord);
-        currentWordDisplay.textContent = `${displayWord} (${wordParts.length} units)`;
-
-        console.log('Admin - Current word:', displayWord);
-        console.log('Admin - Word parts:', wordParts);
-        console.log('Admin - Unit count:', wordParts.length);
-    }
-    
-    // Load and display word history
-    function loadWordHistory() {
-        const dailyWords = getDailyWords();
-        let historyHTML = '';
-        
-        // Sort dates in descending order
-        const sortedDates = Object.keys(dailyWords).sort().reverse();
-        
-        if (sortedDates.length === 0) {
-            historyHTML = '<p>No words have been set yet.</p>';
-        } else {
-            historyHTML = '<ul>';
-            sortedDates.forEach(date => {
-                historyHTML += `<li><strong>${date}:</strong> ${dailyWords[date]}</li>`;
-            });
-            historyHTML += '</ul>';
-        }
-        
-        wordHistory.innerHTML = historyHTML;
-    }
-    
-    // Handle setting a new word
-    function handleSetWord() {
-        const newWord = newWordInput.value.trim();
-
-        // Validate the word is not empty
-        if (!newWord) {
-            wordMessage.textContent = 'Please enter a word';
-            wordMessage.className = 'error-message';
-            return;
-        }
-
-        // Normalize the word for consistent validation
-        const normalizedWord = TeluguUtils.normalizeTeluguText(newWord);
-
-        // Check if it's a valid Telugu word from the dictionary
-        if (!TeluguWordList.isValidWord(normalizedWord)) {
-            wordMessage.textContent = `"${newWord}" is not in the word dictionary. Please use a valid Telugu word from the game's word list.`;
-            wordMessage.className = 'error-message';
-            return;
-        }
-
-        // Check word length (2-5 Telugu units)
-        const wordParts = TeluguUtils.splitTeluguWord(normalizedWord);
-        if (wordParts.length < 2 || wordParts.length > 5) {
-            wordMessage.textContent = `Word must be 2-5 Telugu units in length (found ${wordParts.length} units)`;
-            wordMessage.className = 'error-message';
-            return;
-        }
-
-        // Check if word is in target word list (suitable as a solution)
-        const isTargetWord = TeluguWordList.targetWordList.some(word =>
-            TeluguUtils.normalizeTeluguText(word) === normalizedWord
-        );
-
-        if (!isTargetWord) {
-            wordMessage.textContent = `"${newWord}" is in the dictionary but not in the target word list. It can be used as a guess but not as a solution.`;
-            wordMessage.className = 'error-message';
-            return;
-        }
-
-        // Get the target date
-        const targetDate = wordDateInput.valueAsDate || new Date();
-        const dateString = formatDate(targetDate);
-
-        // Check if a word is already set for this date
-        const dailyWords = getDailyWords();
-        if (dailyWords[dateString]) {
-            const confirmOverwrite = confirm(
-                `A word "${dailyWords[dateString]}" is already set for ${dateString}. Do you want to replace it with "${newWord}"?`
-            );
-            if (!confirmOverwrite) {
-                return;
-            }
-        }
-
-        // Save the word
-        dailyWords[dateString] = normalizedWord;
-        saveDailyWords(dailyWords);
-
-        // Update UI
-        wordMessage.textContent = `Word "${normalizedWord}" set for ${dateString} (${wordParts.length} units)`;
-        wordMessage.className = 'success-message';
-        newWordInput.value = '';
-
-        // Refresh displays
-        loadCurrentWord();
-        loadWordHistory();
-    }
-    
-    // Get daily words from storage
-    function getDailyWords() {
-        const wordsJson = localStorage.getItem(DAILY_WORDS_KEY);
-        return wordsJson ? JSON.parse(wordsJson) : {};
-    }
-    
-    // Save daily words to storage
-    function saveDailyWords(dailyWords) {
-        localStorage.setItem(DAILY_WORDS_KEY, JSON.stringify(dailyWords));
-    }
-    
-    // Format date as YYYY-MM-DD
-    function formatDate(date) {
-        return date.toISOString().split('T')[0];
     }
 
     // ============================================================================
-    // HINT MANAGEMENT FUNCTIONS
+    // DAILY WORD + HINT (stored in Firestore: dailyWords/{YYYY-MM-DD})
     // ============================================================================
 
-    // Load and display current hint
-    function loadCurrentHint() {
-        const hintData = localStorage.getItem(HINT_KEY);
-        const currentHintDisplay = document.getElementById('current-hint-display');
-        const currentHintText = document.getElementById('current-hint-text');
-        const hintInput = document.getElementById('hint-input');
+    function dailyDoc(dateKey) {
+        return FirebaseDB.collections.dailyWords().doc(dateKey);
+    }
 
-        if (hintData) {
-            try {
-                const hint = JSON.parse(hintData);
-                const today = new Date().toISOString().split('T')[0];
+    function showMessage(element, text, isError) {
+        element.textContent = text;
+        element.className = isError ? 'error-message' : 'success-message';
+    }
 
-                if (hint.date === today && hint.text) {
-                    currentHintText.textContent = hint.text;
-                    currentHintDisplay.style.display = 'block';
-                    hintInput.value = hint.text;
-                } else {
-                    currentHintDisplay.style.display = 'none';
-                    hintInput.value = '';
-                }
-            } catch (e) {
-                console.error('Error loading hint:', e);
-                currentHintDisplay.style.display = 'none';
-            }
-        } else {
-            currentHintDisplay.style.display = 'none';
-            hintInput.value = '';
+    function describeError(error) {
+        if (error && error.code === 'permission-denied') {
+            return 'Permission denied. Make sure the security rules from firestore.rules are published and your account is in the "admins" collection.';
+        }
+        return (error && error.message) || String(error);
+    }
+
+    // Today's puzzle, exactly as players will get it
+    async function loadCurrentWord() {
+        currentWordDisplay.textContent = 'Loading...';
+        const puzzle = await DailyChallenge.load();
+        const units = TeluguUtils.splitTeluguWord(puzzle.word).length;
+        currentWordDisplay.textContent = `${puzzle.word} (${units} units)`;
+        currentWordMeta.textContent =
+            (puzzle.source === 'firestore' ? 'Scheduled by admin' : 'Picked automatically (nothing scheduled)') +
+            ` · ${puzzle.date}` +
+            (puzzle.hint ? ` · Hint: ${puzzle.hint}` : ' · No hint');
+    }
+
+    // Prefill the form with whatever is already saved for the chosen date
+    async function loadSelectedEntry() {
+        const dateKey = wordDateInput.value;
+        wordMessage.textContent = '';
+        if (!dateKey) return;
+
+        entryStatus.textContent = 'Checking this date...';
+        try {
+            const doc = await dailyDoc(dateKey).get();
+            const data = doc.exists ? doc.data() : null;
+            newWordInput.value = (data && data.word) || '';
+            hintInput.value = (data && data.hint) || '';
+            deleteEntryButton.style.display = data ? 'inline-block' : 'none';
+            entryStatus.textContent = data
+                ? 'Something is already scheduled for this date. Editing it will replace it.'
+                : `Nothing scheduled yet. Players will get the automatic word: ${TeluguWordList.getWordOfDay(dateKey)}`;
+        } catch (error) {
+            entryStatus.textContent = describeError(error);
         }
     }
 
-    // Handle setting a new hint
-    function handleSetHint() {
-        const hintInput = document.getElementById('hint-input');
-        const messageDiv = document.getElementById('hint-message');
-        const hintText = hintInput.value.trim();
+    /**
+     * Validate a word for use as a daily answer.
+     * @returns {{ok: boolean, word?: string, units?: number, error?: string}}
+     */
+    function validateDailyWord(rawWord) {
+        const word = TeluguUtils.normalizeTeluguText(rawWord);
 
-        if (!hintText) {
-            messageDiv.textContent = 'Please enter a hint';
-            messageDiv.className = 'error-message';
-            setTimeout(() => { messageDiv.textContent = ''; }, 3000);
+        if (!TeluguWordList.isValidWord(word)) {
+            return { ok: false, error: `"${rawWord}" is not in the word dictionary. Add it under Word Dictionary Management first, so players can type it as a guess.` };
+        }
+
+        const units = TeluguUtils.splitTeluguWord(word).length;
+        if (units < 2 || units > 5) {
+            return { ok: false, error: `Word must be 2-5 Telugu units in length (found ${units} units)` };
+        }
+
+        return { ok: true, word, units };
+    }
+
+    async function handleSaveEntry() {
+        const dateKey = wordDateInput.value;
+        const rawWord = newWordInput.value.trim();
+        const hint = hintInput.value.trim();
+
+        if (!dateKey) {
+            showMessage(wordMessage, 'Please choose a date', true);
+            return;
+        }
+        if (!rawWord && !hint) {
+            showMessage(wordMessage, 'Enter a word, a hint, or both', true);
             return;
         }
 
-        const today = new Date().toISOString().split('T')[0];
-        const hintData = {
-            text: hintText,
-            date: today
+        const entry = {
+            revealAt: firebase.firestore.Timestamp.fromDate(DailyChallenge.revealAtFor(dateKey)),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: currentUser.uid
         };
 
-        localStorage.setItem(HINT_KEY, JSON.stringify(hintData));
+        let summary;
+        if (rawWord) {
+            const result = validateDailyWord(rawWord);
+            if (!result.ok) {
+                showMessage(wordMessage, result.error, true);
+                return;
+            }
+            entry.word = result.word;
+            summary = `Word "${result.word}" (${result.units} units)`;
+        } else {
+            summary = `Hint for the automatic word "${TeluguWordList.getWordOfDay(dateKey)}"`;
+        }
+        if (hint) entry.hint = hint;
 
-        messageDiv.textContent = 'Hint set successfully! Players will see it on the game page.';
-        messageDiv.className = 'success-message';
-
-        // Update the current hint display
-        loadCurrentHint();
-
-        setTimeout(() => { messageDiv.textContent = ''; }, 3000);
+        showMessage(wordMessage, 'Saving...', false);
+        try {
+            await dailyDoc(dateKey).set(entry);
+            showMessage(wordMessage, `${summary}${hint ? ' with hint' : ''} saved for ${dateKey}. Every player will get it.`, false);
+            loadCurrentWord();
+            loadSelectedEntry();
+            loadWordHistory();
+        } catch (error) {
+            console.error('Error saving daily word:', error);
+            showMessage(wordMessage, describeError(error), true);
+        }
     }
 
-    // Handle clearing the hint
-    function handleClearHint() {
-        const messageDiv = document.getElementById('hint-message');
-        const hintInput = document.getElementById('hint-input');
+    async function handleDeleteEntry() {
+        const dateKey = wordDateInput.value;
+        if (!dateKey || !confirm(`Remove the scheduled word/hint for ${dateKey}? Players will get the automatic word instead.`)) {
+            return;
+        }
+        try {
+            await dailyDoc(dateKey).delete();
+            showMessage(wordMessage, `Removed the entry for ${dateKey}.`, false);
+            loadCurrentWord();
+            loadSelectedEntry();
+            loadWordHistory();
+        } catch (error) {
+            showMessage(wordMessage, describeError(error), true);
+        }
+    }
 
-        localStorage.removeItem(HINT_KEY);
+    // Recent and upcoming entries, newest date first
+    async function loadWordHistory() {
+        wordHistory.textContent = 'Loading...';
+        try {
+            const snapshot = await FirebaseDB.collections.dailyWords()
+                .orderBy(firebase.firestore.FieldPath.documentId(), 'desc')
+                .limit(60)
+                .get();
 
-        hintInput.value = '';
-        messageDiv.textContent = 'Hint cleared!';
-        messageDiv.className = 'success-message';
+            if (snapshot.empty) {
+                wordHistory.innerHTML = '<p>No words have been scheduled yet.</p>';
+                return;
+            }
 
-        // Update the current hint display
-        loadCurrentHint();
+            const today = DailyChallenge.getDateKey();
+            const list = document.createElement('ul');
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const item = document.createElement('li');
+                const label = doc.id > today ? ' (upcoming)' : doc.id === today ? ' (today)' : '';
+                const word = data.word || `${TeluguWordList.getWordOfDay(doc.id)} (auto)`;
 
-        setTimeout(() => { messageDiv.textContent = ''; }, 3000);
+                const date = document.createElement('strong');
+                date.textContent = `${doc.id}${label}: `;
+                item.appendChild(date);
+                item.appendChild(document.createTextNode(word + (data.hint ? ` · 💡 ${data.hint}` : '')));
+                item.style.cursor = 'pointer';
+                item.title = 'Click to edit';
+                item.addEventListener('click', () => {
+                    wordDateInput.value = doc.id;
+                    loadSelectedEntry();
+                    wordDateInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+                list.appendChild(item);
+            });
+            wordHistory.innerHTML = '';
+            wordHistory.appendChild(list);
+        } catch (error) {
+            wordHistory.textContent = describeError(error);
+        }
+    }
+
+    // ============================================================================
+    // ONE-TIME MIGRATION of words/hints saved by the old browser-only admin page
+    // ============================================================================
+
+    function readLegacyEntries() {
+        const entries = {};
+        try {
+            const words = JSON.parse(localStorage.getItem(LEGACY_DAILY_WORDS_KEY) || '{}');
+            Object.keys(words).forEach(date => { entries[date] = { word: words[date] }; });
+
+            const hint = JSON.parse(localStorage.getItem(LEGACY_HINT_KEY) || 'null');
+            if (hint && hint.date && hint.text) {
+                entries[hint.date] = Object.assign(entries[hint.date] || {}, { hint: hint.text });
+            }
+        } catch (e) {
+            console.warn('Could not read old browser-saved words:', e);
+        }
+        return entries;
+    }
+
+    function checkLegacyData() {
+        const count = Object.keys(readLegacyEntries()).length;
+        const panel = document.getElementById('migrate-panel');
+        panel.style.display = count ? 'block' : 'none';
+        document.getElementById('migrate-count').textContent = count;
+    }
+
+    async function handleMigrateLegacy() {
+        const entries = readLegacyEntries();
+        const message = document.getElementById('migrate-message');
+        const batch = FirebaseDB.db.batch();
+
+        Object.keys(entries).forEach(dateKey => {
+            const entry = {
+                revealAt: firebase.firestore.Timestamp.fromDate(DailyChallenge.revealAtFor(dateKey)),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedBy: currentUser.uid
+            };
+            if (entries[dateKey].word) entry.word = TeluguUtils.normalizeTeluguText(entries[dateKey].word);
+            if (entries[dateKey].hint) entry.hint = entries[dateKey].hint;
+            // merge: don't wipe anything already scheduled in Firestore
+            batch.set(dailyDoc(dateKey), entry, { merge: true });
+        });
+
+        try {
+            await batch.commit();
+            localStorage.removeItem(LEGACY_DAILY_WORDS_KEY);
+            localStorage.removeItem(LEGACY_HINT_KEY);
+            showMessage(message, `Uploaded ${Object.keys(entries).length} entries to Firestore.`, false);
+            checkLegacyData();
+            loadCurrentWord();
+            loadWordHistory();
+        } catch (error) {
+            showMessage(message, describeError(error), true);
+        }
     }
 
     // ============================================================================

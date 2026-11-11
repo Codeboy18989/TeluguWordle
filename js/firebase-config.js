@@ -7,16 +7,16 @@
 // REPLACE THESE WITH YOUR ACTUAL FIREBASE PROJECT CREDENTIALS
 // Get these from: Firebase Console > Project Settings > Your apps > Web app
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY_HERE",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBAB4WRmCYhehpBTAp2gi_sT9oaQ_w5e4g",
+  authDomain: "telugu-wordle-4496e.firebaseapp.com",
+  projectId: "telugu-wordle-4496e",
+  storageBucket: "telugu-wordle-4496e.firebasestorage.app",
+  messagingSenderId: "163162856870",
+  appId: "1:163162856870:web:6f3897b8b167876b444367"
 };
 
 // Initialize Firebase
-let app, db;
+let app, db, auth = null;
 
 try {
     // Initialize Firebase App
@@ -24,6 +24,11 @@ try {
 
     // Initialize Firestore
     db = firebase.firestore();
+
+    // Firebase Auth is only loaded on the admin page (for Google sign-in)
+    if (typeof firebase.auth === 'function') {
+        auth = firebase.auth();
+    }
 
     console.log('✅ Firebase initialized successfully');
 
@@ -47,11 +52,15 @@ try {
 const FirebaseDB = {
     db: db,
     app: app,
+    auth: auth,
 
     // Collection references
     collections: {
         words: () => db ? db.collection('words') : null,
+        // dailyWords/{YYYY-MM-DD}: { word?, hint?, revealAt, updatedAt, updatedBy }
         dailyWords: () => db ? db.collection('dailyWords') : null,
+        // admins/{uid}: allowlist of accounts that may change words (see firestore.rules)
+        admins: () => db ? db.collection('admins') : null,
         stats: () => db ? db.collection('stats') : null
     },
 

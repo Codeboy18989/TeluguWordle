@@ -14,8 +14,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
+    // Fetch today's puzzle (admin-set word + hint from Firestore, or the
+    // automatic word of the day) so every player gets the same word
+    const todaysPuzzle = await DailyChallenge.load();
+    console.log(`📅 Puzzle for ${todaysPuzzle.date} (${todaysPuzzle.source})`);
+
     // Initialize the game
-    TeluguWordle.init();
+    TeluguWordle.init(todaysPuzzle);
 
     // Add event listeners for physical keyboard input
     document.addEventListener('keydown', handlePhysicalKeyboard);
@@ -23,9 +28,56 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Setup keyboard toggle button for mobile view
     setupKeyboardToggle();
 
-    // Load and display hint
-    loadHint();
-    
+    // Size the tiles so the whole board fits in the space above the keyboard
+    setupBoardSizing();
+
+    /**
+     * Fit the game board into the space the layout gives it.
+     * Tiles shrink when the keyboard takes more room (or the window is short)
+     * and grow back (up to 60px) when the keyboard is hidden.
+     */
+    function setupBoardSizing() {
+        const board = document.getElementById('game-board');
+        const root = document.documentElement;
+        if (!board) return;
+
+        const MAX_TILE = 60;
+        const MIN_TILE = 24;
+
+        function fitBoard() {
+            const boardStyle = getComputedStyle(board);
+            const wordLength = parseInt(getComputedStyle(root).getPropertyValue('--current-word-length'), 10) || 5;
+            const rowCount = board.querySelectorAll('.row').length || 6;
+            const gap = parseFloat(boardStyle.rowGap) || 5;
+
+            const availableHeight = board.clientHeight
+                - parseFloat(boardStyle.paddingTop) - parseFloat(boardStyle.paddingBottom);
+            const availableWidth = board.clientWidth
+                - parseFloat(boardStyle.paddingLeft) - parseFloat(boardStyle.paddingRight);
+
+            const byHeight = (availableHeight - gap * (rowCount - 1)) / rowCount;
+            const byWidth = (availableWidth - gap * (wordLength - 1)) / wordLength;
+            const size = Math.max(MIN_TILE, Math.floor(Math.min(MAX_TILE, byHeight, byWidth)));
+
+            const newValue = size + 'px';
+            if (root.style.getPropertyValue('--tile-size') !== newValue) {
+                root.style.setProperty('--tile-size', newValue);
+            }
+        }
+
+        fitBoard();
+
+        if (typeof ResizeObserver !== 'undefined') {
+            // Board area changes on window resize and when the keyboard is hidden/shown
+            new ResizeObserver(fitBoard).observe(board);
+        } else {
+            window.addEventListener('resize', fitBoard);
+        }
+
+        // Word length changes for each new word (game.js updates --current-word-length)
+        new MutationObserver(fitBoard).observe(root, { attributes: true, attributeFilter: ['style'] });
+    }
+
     // Handle physical keyboard input
     function handlePhysicalKeyboard(event) {
         // Ignore if focused on an input element
@@ -103,47 +155,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }, 500);
     }
 
-    // Load and display hint from admin
-    function loadHint() {
-        const HINT_KEY = 'telugu_wordle_hint';
-        const hintElement = document.getElementById('hint-text');
-
-        console.log('🔍 [HINT DEBUG] Starting hint load...');
-        console.log('🔍 [HINT DEBUG] Hint element:', hintElement);
-
-        try {
-            const hintData = localStorage.getItem(HINT_KEY);
-            console.log('🔍 [HINT DEBUG] Raw hint data from localStorage:', hintData);
-
-            if (hintData) {
-                const hint = JSON.parse(hintData);
-                const today = new Date().toISOString().split('T')[0];
-
-                console.log('🔍 [HINT DEBUG] Parsed hint:', hint);
-                console.log('🔍 [HINT DEBUG] Today\'s date:', today);
-                console.log('🔍 [HINT DEBUG] Hint date:', hint.date);
-                console.log('🔍 [HINT DEBUG] Dates match:', hint.date === today);
-
-                // Check if hint is for today's word
-                if (hint.date === today && hint.text && hint.text.trim()) {
-                    hintElement.textContent = hint.text;
-                    hintElement.style.display = 'block';
-
-                    console.log('✅ [HINT DEBUG] Hint displayed successfully!');
-                    console.log('✅ [HINT DEBUG] Hint text:', hint.text);
-                } else {
-                    hintElement.style.display = 'none';
-                    console.log('ℹ️ [HINT DEBUG] Hint hidden (expired or empty)');
-                }
-            } else {
-                hintElement.style.display = 'none';
-                console.log('ℹ️ [HINT DEBUG] No hint data found in localStorage');
-            }
-        } catch (e) {
-            console.error('❌ [HINT DEBUG] Error loading hint:', e);
-            hintElement.style.display = 'none';
-        }
-    }
     
     // Handle dark mode toggle if implemented in settings
     const darkModeToggle = document.getElementById('dark-mode-toggle');
