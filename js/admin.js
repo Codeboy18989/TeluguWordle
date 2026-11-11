@@ -86,9 +86,18 @@
             await FirebaseDB.auth.signInWithPopup(provider);
         } catch (error) {
             console.error('Sign-in failed:', error);
-            loginError.textContent = error.code === 'auth/popup-closed-by-user'
-                ? 'Sign-in was cancelled.'
-                : `Sign-in failed: ${error.message}`;
+            if (error.code === 'auth/popup-closed-by-user') {
+                loginError.textContent = 'Sign-in was cancelled.';
+            } else if (location.protocol === 'file:') {
+                // Google sign-in needs a real web address, not a file opened from disk
+                loginError.textContent = 'Google sign-in does not work on a file opened from your computer (file://). ' +
+                    'Open the page through a web server instead, e.g. run "python3 -m http.server" and visit http://localhost:8000/admin.html';
+            } else if (error.code === 'auth/unauthorized-domain') {
+                loginError.textContent = `This website's domain isn't allowed yet. In Firebase Console go to ` +
+                    `Authentication → Settings → Authorized domains → Add domain, and add: ${location.hostname}`;
+            } else {
+                loginError.textContent = `Sign-in failed: ${error.message}`;
+            }
         }
     }
 
